@@ -6,7 +6,7 @@ authors = ["ArtFx TD gang"]
 
 description = \
     """
-    Set of python module and maya config to integrate houdini in the silex pipeline
+    Set of python module and houdini config to integrate houdini in the silex pipeline
     Part of the Silex ecosystem
     """
 
