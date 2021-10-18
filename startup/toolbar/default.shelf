@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <tool name="aaaa" label="" icon="">
+    <script scriptType="python"><![CDATA[]]></script>
+  </tool>
+
+  <tool name="aaaa0" label="" icon="">
+    <script scriptType="python"><![CDATA[]]></script>
+  </tool>
+
+  <tool name="aaaa1" label="" icon="">
+    <script scriptType="python"><![CDATA[]]></script>
+  </tool>
+
+  <tool name="aaaa2" label="" icon="">
+    <script scriptType="python"><![CDATA[]]></script>
+  </tool>
+
+  <tool name="aaaa3" label="" icon="">
+    <script scriptType="python"><![CDATA[]]></script>
+  </tool>
+
+  <tool name="aaaa4" label="test" icon="">
+    <script scriptType="python"><![CDATA[print('aaa')]]></script>
+  </tool>
+
+  <tool name="print" label="print" icon="">
+    <script scriptType="python"><![CDATA[Context.get().get_action('print').execute()]]></script>
+  </tool>
+
+  <tool name="print0" label="print" icon="">
+    <script scriptType="python"><![CDATA[from silex_client.core.context import Context;Context.get().get_action('print').execute()]]></script>
+  </tool>
+
+  <tool name="print1" label="print" icon="">
+    <script scriptType="python"><![CDATA[from silex_client.core.context import Context;Context.get().get_action('print').execute()]]></script>
+  </tool>
+
+  <toolshelf name="silex_shelf" label="silex_shelf">
+    <memberTool name="print2"/>
+  </toolshelf>
+
+  <tool name="print2" label="print" icon="">
+    <script scriptType="python"><![CDATA[from silex_client.core.context import Context;Context.get().get_action('print').execute()]]></script>
+  </tool>
+</shelfDocument>

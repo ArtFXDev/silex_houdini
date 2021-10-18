@@ -6,14 +6,14 @@ from hou import shelves
 
 def create_shelf():
     print("aaaa")
-
+    shelf_id = "silex_shelf"
     hou.shelves.beginChangeBlock()
 
     # create shelf
-    shelf = hou.shelves.newShelf("silex_shelf")
+    shelf = hou.shelves.newShelf(name=shelf_id, label=shelf_id)
     
     # get action
-    actions = { item["name"]: f"Context.get().get_action('{item['name']}').execute()" for item in Context.get().config.actions }
+    actions = { item["name"]: f"from silex_client.core.context import Context;Context.get().get_action('{item['name']}').execute()" for item in Context.get().config.actions }
     print(actions)
     shelf_tools = []
     for action in actions:

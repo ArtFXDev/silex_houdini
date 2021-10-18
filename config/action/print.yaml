@@ -1,0 +1,9 @@
+print:
+  hide: true
+  steps:
+    print:
+      label: "Print"
+      index: 20
+      commands:
+        print:
+          path: "silex_houdini.commands.print.Print"
