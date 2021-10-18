@@ -1,0 +1,9 @@
+save:
+  hide: true
+  steps:
+    save:
+      label: "Build"
+      index: 20
+      commands:
+        save:
+          path: "silex_houdini.commands.save.Save"

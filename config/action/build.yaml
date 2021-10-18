@@ -1,0 +1,9 @@
+build:
+  hide: true
+  steps:
+    build:
+      label: "Build"
+      index: 20
+      commands:
+        build:
+          path: "silex_houdini.commands.build.Build"

@@ -21,8 +21,8 @@ def create_shelf():
     hou.shelves.beginChangeBlock()
     
     # to switch to another context
-    shot_id = Context.get().metadata.get("shot_id", -1)
-    if shot_id is not -1:
+    shot_id = Context.get().metadata.get("shot_id", None)
+    if shot_id:
         os.environ["SILEX_TASK_ID"] = shot_id
         Context.get().is_outdated = True
 
