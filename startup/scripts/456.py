@@ -1,12 +1,16 @@
-print("aaaa")
-
 from silex_client.core.context import Context
 import hou
-from hou import shelves
+import os
 
 def create_shelf():
-    print("aaaa")
     shelf_id = "silex_shelf"
+
+    # to switch to another context
+    shot_id = Context.get().metadata.get("shot_id", -1)
+    if shot_id is not -1:
+        os.environ["SILEX_TASK_ID"] = shot_id
+        Context.get().is_outdated = True
+
     hou.shelves.beginChangeBlock()
 
     # create shelf
