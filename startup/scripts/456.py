@@ -30,7 +30,6 @@ def create_shelf():
     # find silex shelfset
     for shelfset_item in hou.shelves.shelfSets():
         if shelfset_id in str(shelfset_item):
-            print("Silex shelf_set found")
             shelfset = hou.shelves.shelfSets()[shelfset_item]
 
     # create shelfset if not exist
