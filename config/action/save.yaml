@@ -2,7 +2,7 @@ save:
   hide: true
   steps:
     save:
-      label: "Build"
+      label: "Save"
       index: 20
       commands:
         save:

@@ -6,4 +6,4 @@ build:
       index: 20
       commands:
         build:
-          path: "silex_houdini.commands.build.Build"
+          path: "silex_houdini.commands.save.Save"
