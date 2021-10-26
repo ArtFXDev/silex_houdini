@@ -1,4 +1,5 @@
 from silex_client.core.context import Context
+from silex_client.resolve.config import Config
 import hou
 import os
 
@@ -9,7 +10,7 @@ def create_shelf():
     """
     shelf_id = "silex_shelf"
     shelfset_id = "silex_shelfset"
-    
+
     # create shelfset
     shelfset = None
     # create shelf
@@ -22,7 +23,7 @@ def create_shelf():
 
             # clear content of existing shelf
             for tool_index in range(len(shelf.tools()), 0, -1):
-                shelf.tools()[tool_index-1].destroy()
+                shelf.tools()[tool_index - 1].destroy()
 
     if not shelf:
         shelf = hou.shelves.newShelf(name=shelf_id, label=shelf_id)
@@ -41,15 +42,19 @@ def create_shelf():
 
     # start editing shelves
     hou.shelves.beginChangeBlock()
-    
+
     # to switch to another context
     task_id = Context.get().metadata.get("task_id", None)
     if task_id:
         os.environ["SILEX_TASK_ID"] = task_id
         Context.get().is_outdated = True
-    
+
     # get action
-    actions = { item["name"]: f"from silex_client.core.context import Context;Context.get().get_action('{item['name']}').execute()" for item in Context.get().config.actions }
+    import_statement = "from silex_client.action.action_query import ActionQuery\n"
+    actions = {
+        item["name"]: f"{import_statement}ActionQuery('{item['name']}').execute()"
+        for item in Config().actions
+    }
     shelf_tools = []
     for action in actions:
         tool = hou.shelves.newTool(label=action, name=action, script=actions[action])
@@ -57,7 +62,7 @@ def create_shelf():
 
     # set action in pipeline shelf
     shelf.setTools(list(shelf.tools()) + list(shelf_tools))
-    
+
     # add shelve in shelfset
     silex_shelves = list(shelfset.shelves())
     silex_shelves.append(shelf)
@@ -67,4 +72,7 @@ def create_shelf():
     hou.shelves.endChangeBlock()
     hou.shelves.reloadShelfFiles()
 
+
+Context.get().start_services()
 create_shelf()
+
