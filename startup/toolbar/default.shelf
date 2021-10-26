@@ -55,6 +55,11 @@
     <memberToolshelf name="silex_shelf"/>
     <memberToolshelf name="silex_shelf"/>
     <memberToolshelf name="silex_shelf"/>
+    <memberToolshelf name="silex_shelf"/>
+    <memberToolshelf name="silex_shelf"/>
+    <memberToolshelf name="silex_shelf"/>
+    <memberToolshelf name="silex_shelf"/>
+    <memberToolshelf name="silex_shelf"/>
   </shelfSet>
 
   <tool name="build" label="build" icon="">

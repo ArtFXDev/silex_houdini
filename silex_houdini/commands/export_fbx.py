@@ -24,7 +24,6 @@ class ExportFBX(CommandBase):
     ):
 
         async def export():
-            print("aaaa")
             out_path = parameters.get("outpath", "D:/")
             # Test output path exist
             if not os.path.exists(out_path):
@@ -32,11 +31,17 @@ class ExportFBX(CommandBase):
             
             # get current selection
             for node in hou.selectedNodes():
-                print(node.path())
                 print(node.type())
-                hou.node(node).geometry().saveToFile(out_path)
+                # create a temporary ROP node
+                fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
+                fbx_rop.parm('sopoutput').set(os.path.join(out_path,node.name())+".fbx")
 
-            print("aaaaa")
+                # link node to object
+                fbx_rop.setInput(0, node)
+                fbx_rop.parm('execute').pressButton()
+                
+                # remove node
+                fbx_rop.destroy()
 
             # export
             return out_path
