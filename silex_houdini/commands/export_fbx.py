@@ -3,6 +3,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_houdini.utils.dialogs import Dialogs
 
 
 # Forward references
@@ -30,8 +31,13 @@ class ExportFBX(CommandBase):
                 os.makedirs(out_path)
             
             # get current selection
+            if len(hou.selectedNodes()) == 0:
+                Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
+                raise Exception("No nodes selected, please select Sop nodes and retry.")
             for node in hou.selectedNodes():
-                print(node.type())
+                if node.type().category().name() != "Sop":
+                    Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
+                    return ""
                 # create a temporary ROP node
                 fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
                 fbx_rop.parm('sopoutput').set(os.path.join(out_path,node.name())+".fbx")
@@ -42,7 +48,8 @@ class ExportFBX(CommandBase):
                 
                 # remove node
                 fbx_rop.destroy()
-
+            
+            print("Done")
             # export
             return out_path
     
