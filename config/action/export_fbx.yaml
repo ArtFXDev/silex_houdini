@@ -7,3 +7,4 @@ export_fbx:
       commands:
         export_fbx:
           path: "silex_houdini.commands.export_fbx.ExportFBX"
+          ask_user: true
