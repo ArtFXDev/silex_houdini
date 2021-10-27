@@ -1,0 +1,9 @@
+export_fbx:
+  hide: true
+  steps:
+    export_fbx:
+      label: "ExportEFBX"
+      index: 20
+      commands:
+        export_fbx:
+          path: "silex_houdini.commands.export_fbx.ExportFBX"

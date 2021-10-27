@@ -16,7 +16,7 @@ import asyncio
 import gazu.files
 import gazu.task
 import re
-import hou 
+import hou
 
 
 class Build(CommandBase):
@@ -30,7 +30,7 @@ class Build(CommandBase):
             task_id = action_query.context_metadata.get("task_id", "none")
             working_file_with_extension = await gazu.files.build_working_file_path(task_id)
             if task_id == "none":
-                Dialogs().err("Invalid task_id !")
+                Dialogs().warn("Invalid task_id !")
                 return -1, None
 
             current_soft = {
@@ -70,7 +70,7 @@ class Build(CommandBase):
 
             # error in future
             if version == "" :
-                Dialogs().err("Failed to get version from regex")
+                Dialogs().warn("Failed to get version from regex")
                 return
 
             file_without_version = re.findall("(?![0-9]*$).", working_file_without_extension)
