@@ -1,8 +1,8 @@
 export_fbx:
-  hide: true
+  hide: false
   steps:
     export_fbx:
-      label: "ExportEFBX"
+      label: "ExportFBX"
       index: 20
       commands:
         export_fbx:
