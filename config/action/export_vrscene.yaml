@@ -1,0 +1,9 @@
+export_vrscene:
+  steps:
+    export_vrscene:
+      label: "Export export_vrscene"
+      index: 20
+      commands:
+        export_vrscene:
+          path: "silex_houdini.commands.export_vrscene.ExportVrscene"
+          ask_user: true

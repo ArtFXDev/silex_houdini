@@ -13,12 +13,13 @@ if typing.TYPE_CHECKING:
 import hou
 import os
 
-parameters = {
-    "outpath": { "label": "outpath", "type": str, "value": "", "hide": False }
-}
 
 class ExportFBX(CommandBase):
 
+    parameters = {
+        "outpath": { "label": "outpath", "type": str, "value": "", "hide": False }
+    }
+    
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
