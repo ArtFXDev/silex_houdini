@@ -12,12 +12,15 @@ if typing.TYPE_CHECKING:
 
 import hou
 import os
+import pathlib
+import gazu
 
 
 class ExportFBX(CommandBase):
 
     parameters = {
-        "outpath": { "label": "outpath", "type": str, "value": "", "hide": False }
+        "outdir": { "label": "Out directory", "type": str, "value": "" },
+        "outfilename": { "label": "Out filename", "type": str, "value": "" }
     }
     
     @CommandBase.conform_command()
@@ -25,33 +28,37 @@ class ExportFBX(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        async def export():
-            out_path = parameters.get("outpath", "D:/")
-            # Test output path exist
-            if not os.path.exists(out_path):
-                os.makedirs(out_path)
-            
-            # get current selection
-            if len(hou.selectedNodes()) == 0:
-                Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
-                raise Exception("No nodes selected, please select Sop nodes and retry.")
-            for node in hou.selectedNodes():
-                if node.type().category().name() != "Sop":
-                    Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
-                    return ""
-                # create a temporary ROP node
-                fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
-                fbx_rop.parm('sopoutput').set(os.path.join(out_path,node.name())+".fbx")
+        outdir = parameters["outdir"]
+        outfilename = parameters["outfilename"]
 
-                # link node to object
-                fbx_rop.setInput(0, node)
-                fbx_rop.parm('execute').pressButton()
-                
-                # remove node
-                fbx_rop.destroy()
-            
-            print("Done")
-            # export
-            return out_path
-    
-        await export()
+        # Test output path exist
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        # get current selection
+        if len(hou.selectedNodes()) == 0:
+            Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
+            raise Exception("No nodes selected, please select Sop nodes and retry.")
+        for node in hou.selectedNodes():
+            if node.type().category().name() != "Sop":
+                Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
+                return ""
+
+            # create a temporary ROP node
+            extension = await gazu.files.get_output_type_by_name("Autodesk FBX")
+            outfilename = os.path.join(outdir, outfilename, node.name())
+            final_filename = str(pathlib.Path(outfilename).with_suffix(f".{extension['short_name']}"))
+            fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
+            fbx_rop.parm('sopoutput').set(final_filename)
+
+            # link node to object
+            fbx_rop.setInput(0, node)
+            fbx_rop.parm('execute').pressButton()
+
+            # remove node
+            fbx_rop.destroy()
+        
+        print("Done")
+
+        # export
+        return final_filename

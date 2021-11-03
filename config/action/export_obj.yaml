@@ -7,3 +7,4 @@ export_obj:
       commands:
         export_obj:
           path: "silex_houdini.commands.export_obj.ExportOBJ"
+          ask_user: true

@@ -12,37 +12,42 @@ if typing.TYPE_CHECKING:
 
 import hou
 import os
+import gazu
+import pathlib
 
-parameters = {
-    "outpath": { "label": "outpath", "type": str, "value": "", "hide": False }
-}
 
 class ExportOBJ(CommandBase):
+
+    parameters = {
+        "outdir": { "label": "Out directory", "type": str, "value": "" },
+        "outfilename": { "label": "Out filename", "type": str, "value": "" }
+    }
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        outdir = parameters["outdir"]
+        outfilename = parameters["outfilename"]
+        
+        # Test output path exist
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
 
-        async def export():
-            out_path = parameters.get("outpath", "D:/")
-            # Test output path exist
-            if not os.path.exists(out_path):
-                os.makedirs(out_path)
-            
-            # get current selection
-            if len(hou.selectedNodes()) == 0:
-                Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
-                raise Exception("No nodes selected, please select Sop nodes and retry.")
-            for node in hou.selectedNodes():
-                if node.type().category().name() != "Sop":
-                    Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
-                    return ""
+        # get current selection
+        if len(hou.selectedNodes()) == 0:
+            Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
+            raise Exception("No nodes selected, please select Sop nodes and retry.")
+        for node in hou.selectedNodes():
+            if node.type().category().name() != "Sop":
+                Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
+                return ""
 
-                hou.node(node.path()).geometry().saveToFile(os.path.join(out_path,node.name())+".obj")
-            
-            print("Done")
-            # export
-            return out_path
-    
-        await export()
+            extension = await gazu.files.get_output_type_by_name("Wavefront OBJ")
+            outfilename = os.path.join(outdir, outfilename, node.name())
+            final_filename = str(pathlib.Path(outfilename).with_suffix(f".{extension['short_name']}"))
+            hou.node(node.path()).geometry().saveToFile(final_filename)
+        
+        print("Done")
+        # export
+        return outdir
