@@ -13,11 +13,15 @@ if typing.TYPE_CHECKING:
 
 import hou
 import os
+import pathlib
+import gazu
 
 class ExportVrscene(CommandBase):
 
     parameters = {
-    "outpath": { "label": "outpath", "type": str, "value": "" },
+    "outdir": { "label": "Out directory", "type": str, "value": "" },
+    "outfilename": { "label": "Out filename", "type": str, "value": "" },
+    "framerange": { "label": "Take timeline as frame-range?", "type": bool, "value": False },
     "camera": {
         "type": SelectParameterMeta(
         *[c.path() for c in hou.node("/obj").children() if c.parent().recursiveGlob(c.path(), hou.nodeTypeFilter.ObjCamera)]
@@ -31,22 +35,35 @@ class ExportVrscene(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        out_path = parameters["outpath"]
-        # get current selection
-        #if len(hou.selectedNodes()) == 0:
-            # Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
-            #raise Exception("No nodes selected, please select Sop nodes and retry.")
+        outdir = parameters["outdir"]
+        # create out dir if not exist
+        if not os.path.exists(outdir):
+                os.makedirs(outdir)
 
         # create a temporary ROP node
         vray_renderer = hou.node('/out').createNode('vray_renderer')
         vray_renderer.parm('vobject').set("*")
         vray_renderer.parm('render_export_mode').set("2")
-        vray_renderer.parm('render_export_filepath').set(os.path.join(out_path)+".vrscene")
+        final_filename = os.path.join(outdir, parameters["outfilename"])
+        
+        extension = await gazu.files.get_output_type_by_name("V-Ray Scene File")
+        final_filename = str(pathlib.Path(final_filename).with_suffix(f".{extension['short_name']}"))
+
+        vray_renderer.parm("render_export_filepath").set(final_filename)
 
         # link selected camera
-        vray_renderer.parm('render_camera').set(parameters["camera"])
+        vray_renderer.parm("render_camera").set(parameters["camera"])
 
-        # link node to object
+        # Set frame range
+        if parameters["framerange"]:
+            vray_renderer.parm("trange").set(1)
+
+            range_playbar = hou.playbar.frameRange()
+            vray_renderer.parm("f1").set(range_playbar.x())
+            vray_renderer.parm("f2").set(range_playbar.y())
+            vray_renderer.parm("f3").set(1)
+
+        # Render
         vray_renderer.parm('execute').pressButton()
 
         # remove node
@@ -55,4 +72,4 @@ class ExportVrscene(CommandBase):
         print("Done")
 
         # export
-        return out_path
+        return outdir
