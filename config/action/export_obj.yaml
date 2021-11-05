@@ -8,3 +8,18 @@ export_obj:
         export_obj:
           path: "silex_houdini.commands.export_obj.ExportOBJ"
           ask_user: true
+          parameters:
+            outdir: !command-output "setup:build_output_path:temp_directory"
+            outfilename: !command-output "setup:build_output_path:file_name"
+
+    move:
+      label: "Move"
+      index: 60
+      commands:
+        move:
+          label: "Move"
+          path: "silex_client.commands.move_file.MoveFile"
+          parameters:
+            file_path: !command-output "export:export_obj"
+            dst_dir: !command-output "setup:build_output_path:directory"
+            from_temp: true
