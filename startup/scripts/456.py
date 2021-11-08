@@ -72,7 +72,5 @@ def create_shelf():
     hou.shelves.endChangeBlock()
     hou.shelves.reloadShelfFiles()
 
-
 Context.get().start_services()
 create_shelf()
-
