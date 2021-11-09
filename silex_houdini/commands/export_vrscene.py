@@ -19,8 +19,8 @@ import gazu
 class ExportVrscene(CommandBase):
 
     parameters = {
-    "outdir": { "label": "Out directory", "type": str, "value": "" },
-    "outfilename": { "label": "Out filename", "type": str, "value": "" },
+    "file_dir": { "label": "Out directory", "type": str, "value": "" },
+    "file_name": { "label": "Out filename", "type": str, "value": "" },
     "framerange": { "label": "Take timeline as frame-range?", "type": bool, "value": False },
     "camera": {
         "type": SelectParameterMeta(
@@ -35,7 +35,9 @@ class ExportVrscene(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        outdir = parameters["outdir"]
+        outdir = parameters["file_dir"]
+        outFilename = parameters["file_name"]
+
         # create out dir if not exist
         if not os.path.exists(outdir):
                 os.makedirs(outdir)
@@ -44,7 +46,7 @@ class ExportVrscene(CommandBase):
         vray_renderer = hou.node('/out').createNode('vray_renderer')
         vray_renderer.parm('vobject').set("*")
         vray_renderer.parm('render_export_mode').set("2")
-        final_filename = os.path.join(outdir, parameters["outfilename"])
+        final_filename = os.path.join(outdir, outFilename)
         
         extension = await gazu.files.get_output_type_by_name("V-Ray Scene File")
         final_filename = str(pathlib.Path(final_filename).with_suffix(f".{extension['short_name']}"))
@@ -72,4 +74,4 @@ class ExportVrscene(CommandBase):
         print("Done")
 
         # export
-        return outdir
+        return final_filename

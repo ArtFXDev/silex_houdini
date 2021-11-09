@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.dialogs import Dialogs
+from silex_client.utils.log import logger
 
 
 # Forward references
@@ -15,12 +16,11 @@ import os
 import pathlib
 import gazu
 
-
 class ExportFBX(CommandBase):
 
     parameters = {
-        "outdir": { "label": "Out directory", "type": str, "value": "" },
-        "outfilename": { "label": "Out filename", "type": str, "value": "" }
+        "file_dir": { "label": "Out directory", "type": str, "value": "" },
+        "file_name": { "label": "Out filename", "type": str, "value": "" }
     }
     
     @CommandBase.conform_command()
@@ -28,9 +28,11 @@ class ExportFBX(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        outdir = parameters["outdir"]
-        outfilename = parameters["outfilename"]
+        outdir = parameters["file_dir"]
+        outfilename = parameters["file_name"]
 
+        logger.info("dddddddddd")
+        logger.info(outdir)
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -46,8 +48,11 @@ class ExportFBX(CommandBase):
 
             # create a temporary ROP node
             extension = await gazu.files.get_output_type_by_name("Autodesk FBX")
-            outfilename = os.path.join(outdir, outfilename, node.name())
+            outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
+
             final_filename = str(pathlib.Path(outfilename).with_suffix(f".{extension['short_name']}"))
+            logger.info(final_filename)
+
             fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
             fbx_rop.parm('sopoutput').set(final_filename)
 
