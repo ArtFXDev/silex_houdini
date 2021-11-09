@@ -1,0 +1,30 @@
+vrscene:
+  steps:
+    export:
+      label: "Export"
+      index: 50
+      commands:
+        export_vrscene:
+          label: "Export in Vrscene"
+          path: "silex_houdini.commands.export_vrscene.ExportVrscene"
+          ask_user: true
+          parameters:
+            file_dir: !command-output "setup:build_output_path:temp_directory"
+            file_name: !command-output "setup:build_output_path:file_name"
+
+    move:
+      label: "Move"
+      index: 60
+      commands:
+        move:
+          label: "Move"
+          path: "silex_client.commands.move_file.MoveFile"
+          parameters:
+            file_path: !command-output "export:export_vrscene"
+            dst_dir: !command-output "setup:build_output_path:directory"
+            from_temp: true
+        remove:
+          label: "Remove"
+          path: "silex_client.commands.remove.Remove"
+          parameters:
+            file_path: !command-output "setup:build_output_path:temp_directory"

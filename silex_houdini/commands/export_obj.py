@@ -19,20 +19,23 @@ import pathlib
 class ExportOBJ(CommandBase):
 
     parameters = {
-        "outdir": { "label": "Out directory", "type": str, "value": "" },
-        "outfilename": { "label": "Out filename", "type": str, "value": "" }
+        "file_dir": { "label": "Out directory", "type": str, "value": "" },
+        "file_name": { "label": "Out filename", "type": str, "value": "" }
     }
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        outdir = parameters["outdir"]
-        outfilename = parameters["outfilename"]
+        outdir = parameters["file_dir"]
+        outfilename = parameters["file_name"]
         
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
+        
+        print(outfilename)
+        print(outfilename)
 
         # get current selection
         if len(hou.selectedNodes()) == 0:
@@ -44,10 +47,11 @@ class ExportOBJ(CommandBase):
                 return ""
 
             extension = await gazu.files.get_output_type_by_name("Wavefront OBJ")
-            outfilename = os.path.join(outdir, outfilename, node.name())
+            outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
             final_filename = str(pathlib.Path(outfilename).with_suffix(f".{extension['short_name']}"))
+            print(final_filename)
             hou.node(node.path()).geometry().saveToFile(final_filename)
         
         print("Done")
         # export
-        return outdir
+        return final_filename
