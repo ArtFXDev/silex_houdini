@@ -1,9 +1,0 @@
-export_abc:
-  steps:
-    export_abc:
-      label: "Export"
-      index: 50
-      commands:
-        export_abc:
-          path: "silex_houdini.commands.export_abc.ExportABC"
-          ask_user: true

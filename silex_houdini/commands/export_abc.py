@@ -19,7 +19,7 @@ import pathlib
 class ExportABC(CommandBase):
 
     parameters = {
-        "out_dir": { "label": "Out directory", "type": pathlib.Path},
+        "file_dir": { "label": "Out directory", "type": pathlib.Path},
         "file_name": { "label": "Out filename", "type": pathlib.Path },
         "start_frame": { "label": "start frame", "type": int },
         "end_frame": { "label": "End frame", "type": int }
@@ -31,7 +31,7 @@ class ExportABC(CommandBase):
     ):
 
         
-        out_dir: str = parameters.get("out_dir", "D:/")
+        out_dir: str = parameters.get("file_dir", "D:/")
         file_name: str = parameters.get("file_name")
         out_path: str = f"{out_dir}{os.path.sep}{os.path.sep}{file_name}"
 
@@ -74,5 +74,5 @@ class ExportABC(CommandBase):
         
         print("Done")
         # export
-        return output_path
+        return out_dir
     

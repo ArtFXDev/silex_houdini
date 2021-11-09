@@ -1,12 +1,12 @@
-vrscene:
+abc:
   steps:
     export:
       label: "Export"
       index: 50
       commands:
-        export_vrscene:
-          label: "Export in Vrscene"
-          path: "silex_houdini.commands.export_vrscene.ExportVrscene"
+        export_abc:
+          label: "Export in Alembic"
+          path: "silex_houdini.commands.export_abc.ExportABC"
           ask_user: true
           parameters:
             file_dir: !command-output "setup:build_output_path:temp_directory"
@@ -20,7 +20,7 @@ vrscene:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: !command-output "export:export_vrscene"
+            src: !command-output "export:export_abc"
             dst: !command-output "setup:build_output_path:directory"
         remove:
           label: "Remove"

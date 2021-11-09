@@ -48,11 +48,9 @@ class ExportFBX(CommandBase):
 
             # create a temporary ROP node
             extension = await gazu.files.get_output_type_by_name("Autodesk FBX")
-            outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
+            temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
 
-            final_filename = str(pathlib.Path(outfilename).with_suffix(f".{extension['short_name']}"))
-            logger.info(final_filename)
-
+            final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
             fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
             fbx_rop.parm('sopoutput').set(final_filename)
 
@@ -66,4 +64,4 @@ class ExportFBX(CommandBase):
         print("Done")
 
         # export
-        return final_filename
+        return outdir
