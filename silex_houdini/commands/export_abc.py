@@ -70,7 +70,7 @@ class ExportABC(CommandBase):
             abc_rop.parm('execute').pressButton()
             
             # remove node
-            #abc_rop.destroy()
+            abc_rop.destroy()
         
         print("Done")
         # export
