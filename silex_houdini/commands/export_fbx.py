@@ -31,8 +31,7 @@ class ExportFBX(CommandBase):
         outdir = parameters["file_dir"]
         outfilename = parameters["file_name"]
 
-        logger.info("dddddddddd")
-        logger.info(outdir)
+        to_return_paths = []
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -54,6 +53,8 @@ class ExportFBX(CommandBase):
             fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
             fbx_rop.parm('sopoutput').set(final_filename)
 
+            to_return_paths.append(final_filename)
+
             # link node to object
             fbx_rop.setInput(0, node)
             fbx_rop.parm('execute').pressButton()
@@ -64,4 +65,4 @@ class ExportFBX(CommandBase):
         print("Done")
 
         # export
-        return outdir
+        return to_return_paths

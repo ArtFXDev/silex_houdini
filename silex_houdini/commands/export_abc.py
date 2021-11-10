@@ -33,8 +33,11 @@ class ExportABC(CommandBase):
         
         out_dir: str = parameters.get("file_dir", "D:/")
         file_name: str = parameters.get("file_name")
+        start_frame = parameters.get("start_frame")
+        end_frame = parameters.get("end_frame")
         out_path: str = f"{out_dir}{os.path.sep}{os.path.sep}{file_name}"
 
+        to_return_paths = []
         # Test output path exist
         if not os.path.exists(out_path):
             os.makedirs(out_path)
@@ -52,17 +55,14 @@ class ExportABC(CommandBase):
             # create a temporary ROP node
             abc_rop = hou.node(node.parent().path()).createNode('rop_alembic')
             output_path = os.path.join(out_path,node.name())+".abc"
-            abc_rop.parm('filename').set(out_path)
+            abc_rop.parm('filename').set(output_path)
+
+            to_return_paths.append(output_path)
 
             # Set frame range
-            start = parameters.get("start_frame", "$FSTART")
-            end = parameters.get("end_frame", "$FEND")
-
-            abc_rop.parm('f1').deleteAllKeyframes()
-            abc_rop.parm('f1').set(start)
-
-            abc_rop.parm('f2').deleteAllKeyframes()
-            abc_rop.parm('f2').set(end)
+            abc_rop.parm("trange").set(1)
+            abc_rop.parm('f1').set(start_frame)
+            abc_rop.parm('f2').set(end_frame)
             
 
             # link node to object
@@ -70,9 +70,9 @@ class ExportABC(CommandBase):
             abc_rop.parm('execute').pressButton()
             
             # remove node
-            abc_rop.destroy()
+            #abc_rop.destroy()
         
         print("Done")
         # export
-        return out_dir
+        return to_return_paths
     

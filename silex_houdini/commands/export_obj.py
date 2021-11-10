@@ -30,9 +30,10 @@ class ExportOBJ(CommandBase):
         outdir = parameters["file_dir"]
         outfilename = parameters["file_name"]
         
+        to_return_paths = []
         # Test output path exist
         if not os.path.exists(outdir):
-            os.makedirs(outdir)
+            os.makedirs(outdir, exist_ok=True)
 
         # get current selection
         if len(hou.selectedNodes()) == 0:
@@ -48,8 +49,10 @@ class ExportOBJ(CommandBase):
             temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
             final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
             hou.node(node.path()).geometry().saveToFile(final_filename)
+
+            # append to return
+            to_return_paths.append(final_filename)
         
         print("Done")
-        # export
         logger.info(outdir)
-        return outdir
+        return to_return_paths
