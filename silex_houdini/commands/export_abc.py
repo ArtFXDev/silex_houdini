@@ -57,13 +57,13 @@ class ExportABC(CommandBase):
             output_path = os.path.join(out_path,node.name())+".abc"
             abc_rop.parm('filename').set(output_path)
 
+            # append to return
             to_return_paths.append(output_path)
 
             # Set frame range
             abc_rop.parm("trange").set(1)
             abc_rop.parm('f1').set(start_frame)
             abc_rop.parm('f2').set(end_frame)
-            
 
             # link node to object
             abc_rop.setInput(0, node)
