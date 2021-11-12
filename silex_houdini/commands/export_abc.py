@@ -5,6 +5,7 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.dialogs import Dialogs
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import IntArrayParameterMeta
 
 
 # Forward references
@@ -14,6 +15,7 @@ if typing.TYPE_CHECKING:
 import hou
 import os
 import pathlib
+import gazu
 
 
 class ExportABC(CommandBase):
@@ -21,8 +23,11 @@ class ExportABC(CommandBase):
     parameters = {
         "file_dir": { "label": "Out directory", "type": pathlib.Path},
         "file_name": { "label": "Out filename", "type": pathlib.Path },
-        "start_frame": { "label": "start frame", "type": int },
-        "end_frame": { "label": "End frame", "type": int }
+        "frame_range": {
+            "label": "IntArray Tester",
+            "type": IntArrayParameterMeta(2),
+            "value": [0, 0]
+        }
     }
 
     @CommandBase.conform_command()
@@ -31,16 +36,15 @@ class ExportABC(CommandBase):
     ):
 
         
-        out_dir: str = parameters.get("file_dir", "D:/")
-        file_name: str = parameters.get("file_name")
-        start_frame = parameters.get("start_frame")
-        end_frame = parameters.get("end_frame")
-        out_path: str = f"{out_dir}{os.path.sep}{os.path.sep}{file_name}"
+        outdir: str = parameters.get("file_dir")
+        outfilename: str = parameters.get("file_name")
+        start_frame = parameters.get("frame_range")[0]
+        end_frame = parameters.get("frame_range")[1]
 
         to_return_paths = []
         # Test output path exist
-        if not os.path.exists(out_path):
-            os.makedirs(out_path)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
         
         # get current selection
         if len(hou.selectedNodes()) == 0:
@@ -54,16 +58,25 @@ class ExportABC(CommandBase):
 
             # create a temporary ROP node
             abc_rop = hou.node(node.parent().path()).createNode('rop_alembic')
-            output_path = os.path.join(out_path,node.name())+".abc"
-            abc_rop.parm('filename').set(output_path)
+
+            # compute final path
+            extension = await gazu.files.get_output_type_by_name("alembic")
+            temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
+            final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
+            
+            
+            abc_rop.parm('filename').set(final_filename)
 
             # append to return
-            to_return_paths.append(output_path)
+            to_return_paths.append(final_filename)
 
             # Set frame range
             abc_rop.parm("trange").set(1)
-            abc_rop.parm('f1').set(start_frame)
-            abc_rop.parm('f2').set(end_frame)
+            logger.info(f"f1 {start_frame}")
+            logger.info(f"f2 {end_frame}")
+
+            abc_rop.parmTuple("f").deleteAllKeyframes() # Needed
+            abc_rop.parmTuple('f').set((start_frame, end_frame, 0))
 
             # link node to object
             abc_rop.setInput(0, node)
@@ -71,7 +84,7 @@ class ExportABC(CommandBase):
             
             # remove node
             abc_rop.destroy()
-        
+            
         print("Done")
         # export
         return to_return_paths
