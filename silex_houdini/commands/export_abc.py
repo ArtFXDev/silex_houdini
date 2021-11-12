@@ -34,8 +34,6 @@ class ExportABC(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-
-        
         outdir: str = parameters.get("file_dir")
         outfilename: str = parameters.get("file_name")
         start_frame = parameters.get("frame_range")[0]
@@ -64,7 +62,6 @@ class ExportABC(CommandBase):
             temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
             final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
             
-            
             abc_rop.parm('filename').set(final_filename)
 
             # append to return
@@ -72,9 +69,6 @@ class ExportABC(CommandBase):
 
             # Set frame range
             abc_rop.parm("trange").set(1)
-            logger.info(f"f1 {start_frame}")
-            logger.info(f"f2 {end_frame}")
-
             abc_rop.parmTuple("f").deleteAllKeyframes() # Needed
             abc_rop.parmTuple('f').set((start_frame, end_frame, 0))
 
@@ -84,7 +78,7 @@ class ExportABC(CommandBase):
             
             # remove node
             abc_rop.destroy()
-            
-        print("Done")
+
         # export
+        logger.info(f"Done export abc, output paths : {to_return_paths}")
         return to_return_paths

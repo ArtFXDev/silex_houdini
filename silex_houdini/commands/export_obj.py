@@ -53,6 +53,5 @@ class ExportOBJ(CommandBase):
             # append to return
             to_return_paths.append(final_filename)
         
-        print("Done")
-        logger.info(outdir)
+        logger.info(f"Done export obj, output paths : {to_return_paths}")
         return to_return_paths

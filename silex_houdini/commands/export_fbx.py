@@ -61,8 +61,6 @@ class ExportFBX(CommandBase):
 
             # remove node
             fbx_rop.destroy()
-        
-        print("Done")
 
-        # export
+        logger.info(f"Done export fbx, output paths : {to_return_paths}")
         return to_return_paths
