@@ -48,7 +48,7 @@ class ExportVrscene(CommandBase):
         vray_renderer.parm('render_export_mode').set("2")
         final_filename = os.path.join(outdir, outFilename)
         
-        extension = await gazu.files.get_output_type_by_name("V-Ray Scene File")
+        extension = await gazu.files.get_output_type_by_name("vrscene")
         final_filename = str(pathlib.Path(final_filename).with_suffix(f".{extension['short_name']}"))
 
         vray_renderer.parm("render_export_filepath").set(final_filename)

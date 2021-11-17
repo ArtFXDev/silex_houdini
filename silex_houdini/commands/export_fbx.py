@@ -20,7 +20,8 @@ class ExportFBX(CommandBase):
 
     parameters = {
         "file_dir": { "label": "Out directory", "type": str, "value": "" },
-        "file_name": { "label": "Out filename", "type": str, "value": "" }
+        "file_name": { "label": "Out filename", "type": str, "value": "" },
+        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False }
     }
     
     @CommandBase.conform_command()
@@ -30,8 +31,8 @@ class ExportFBX(CommandBase):
 
         outdir = parameters["file_dir"]
         outfilename = parameters["file_name"]
+        root_name = parameters["root_name"]
 
-        to_return_paths = []
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -40,27 +41,36 @@ class ExportFBX(CommandBase):
         if len(hou.selectedNodes()) == 0:
             Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
             raise Exception("No nodes selected, please select Sop nodes and retry.")
-        for node in hou.selectedNodes():
-            if node.type().category().name() != "Sop":
-                Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
-                return ""
 
-            # create a temporary ROP node
-            extension = await gazu.files.get_output_type_by_name("Autodesk FBX")
-            temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
+        selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
+        selected_name = [item.name() for item in selected_object ]
+        logger.info(selected_object)
+        
+        # create a temporary ROP node
+        extension = await gazu.files.get_output_type_by_name("fbx")
+        temp_outfilename = os.path.join(outdir, f"{outfilename}_{root_name}")
+        final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
+        
+        # create temp filmboxfbx
+        fbx_rop = hou.node("out").createNode('filmboxfbx')
+        fbx_rop.parm('sopoutput').set(final_filename)
 
-            final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
-            fbx_rop = hou.node(node.parent().path()).createNode('rop_fbx')
-            fbx_rop.parm('sopoutput').set(final_filename)
+        # create temp root node
+        temp_subnet = hou.node("obj").createNode("subnet")
+        hou.moveNodesTo(selected_object, temp_subnet)
+        
+        # past temp_subnet in export fbx 
+        fbx_rop.parm("startnode").set(temp_subnet.path())
+        
+        # link node to object
+        fbx_rop.parm("execute").pressButton()
 
-            to_return_paths.append(final_filename)
+        # remove node
+        fbx_rop.destroy()
 
-            # link node to object
-            fbx_rop.setInput(0, node)
-            fbx_rop.parm('execute').pressButton()
+        selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
+        hou.moveNodesTo(selected, hou.node("/obj/"))
 
-            # remove node
-            fbx_rop.destroy()
-
-        logger.info(f"Done export fbx, output paths : {to_return_paths}")
-        return to_return_paths
+        # export
+        logger.info(f"Done export fbx, output paths : {final_filename}")
+        return final_filename

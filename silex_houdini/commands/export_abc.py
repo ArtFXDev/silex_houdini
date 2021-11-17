@@ -7,7 +7,6 @@ from silex_houdini.utils.dialogs import Dialogs
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import IntArrayParameterMeta
 
-
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -24,7 +23,7 @@ class ExportABC(CommandBase):
         "file_dir": { "label": "Out directory", "type": pathlib.Path},
         "file_name": { "label": "Out filename", "type": pathlib.Path },
         "frame_range": {
-            "label": "IntArray Tester",
+            "label": "Frame Range",
             "type": IntArrayParameterMeta(2),
             "value": [0, 0]
         }
@@ -58,7 +57,7 @@ class ExportABC(CommandBase):
             abc_rop = hou.node(node.parent().path()).createNode('rop_alembic')
 
             # compute final path
-            extension = await gazu.files.get_output_type_by_name("alembic")
+            extension = await gazu.files.get_output_type_by_name("abc")
             temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
             final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
             
