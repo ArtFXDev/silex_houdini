@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.dialogs import Dialogs
-
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -30,28 +30,28 @@ class ExportOBJ(CommandBase):
         outdir = parameters["file_dir"]
         outfilename = parameters["file_name"]
         
+        to_return_paths = []
         # Test output path exist
         if not os.path.exists(outdir):
-            os.makedirs(outdir)
-        
-        print(outfilename)
-        print(outfilename)
+            os.makedirs(outdir, exist_ok=True)
 
         # get current selection
         if len(hou.selectedNodes()) == 0:
             Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
             raise Exception("No nodes selected, please select Sop nodes and retry.")
+
         for node in hou.selectedNodes():
             if node.type().category().name() != "Sop":
                 Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
                 return ""
 
             extension = await gazu.files.get_output_type_by_name("Wavefront OBJ")
-            outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
-            final_filename = str(pathlib.Path(outfilename).with_suffix(f".{extension['short_name']}"))
-            print(final_filename)
+            temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
+            final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
             hou.node(node.path()).geometry().saveToFile(final_filename)
+
+            # append to return
+            to_return_paths.append(final_filename)
         
-        print("Done")
-        # export
-        return final_filename
+        logger.info(f"Done export obj, output paths : {to_return_paths}")
+        return to_return_paths
