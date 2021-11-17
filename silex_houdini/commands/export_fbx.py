@@ -5,6 +5,7 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.dialogs import Dialogs
 from silex_client.utils.log import logger
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -23,15 +24,15 @@ class ExportFBX(CommandBase):
         "file_name": { "label": "Out filename", "type": str, "value": "" },
         "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False }
     }
-    
+
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        outdir = parameters["file_dir"]
-        outfilename = parameters["file_name"]
-        root_name = parameters["root_name"]
+        outdir = parameters.get("file_dir")
+        outfilename = parameters.get("file_name")
+        root_name = parameters.get("root_name")
 
         # Test output path exist
         if not os.path.exists(outdir):
@@ -39,13 +40,12 @@ class ExportFBX(CommandBase):
 
         # get current selection
         if len(hou.selectedNodes()) == 0:
-            Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
-            raise Exception("No nodes selected, please select Sop nodes and retry.")
+            logger.error("No nodes selected, please select Sop nodes and retry.")
+            raise Exception()
 
         selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
         selected_name = [item.name() for item in selected_object ]
-        logger.info(selected_object)
-        
+
         # create a temporary ROP node
         extension = await gazu.files.get_output_type_by_name("fbx")
         temp_outfilename = os.path.join(outdir, f"{outfilename}_{root_name}")
