@@ -52,24 +52,26 @@ class ExportFBX(CommandBase):
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
         
         # create temp filmboxfbx
-        fbx_rop = hou.node("out").createNode('filmboxfbx')
-        fbx_rop.parm('sopoutput').set(final_filename)
+        fbx_rop = hou.node("out").createNode("filmboxfbx")
+        fbx_rop.parm("sopoutput").set(final_filename)
+        fbx_rop.parm("createsubnetroot").set(0)
 
         # create temp root node
         temp_subnet = hou.node("obj").createNode("subnet")
         hou.moveNodesTo(selected_object, temp_subnet)
-        
+
         # past temp_subnet in export fbx 
         fbx_rop.parm("startnode").set(temp_subnet.path())
         
         # link node to object
         fbx_rop.parm("execute").pressButton()
 
-        # remove node
+        # remove fbx export
         fbx_rop.destroy()
 
         selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
         hou.moveNodesTo(selected, hou.node("/obj/"))
+        temp_subnet.destroy()
 
         # export
         logger.info(f"Done export fbx, output paths : {final_filename}")
