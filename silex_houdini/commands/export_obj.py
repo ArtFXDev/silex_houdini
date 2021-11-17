@@ -45,7 +45,7 @@ class ExportOBJ(CommandBase):
                 Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
                 return ""
 
-            extension = await gazu.files.get_output_type_by_name("Wavefront OBJ")
+            extension = await gazu.files.get_output_type_by_name("obj")
             temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
             final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
             hou.node(node.path()).geometry().saveToFile(final_filename)
@@ -53,5 +53,6 @@ class ExportOBJ(CommandBase):
             # append to return
             to_return_paths.append(final_filename)
         
+        # export
         logger.info(f"Done export obj, output paths : {to_return_paths}")
         return to_return_paths
