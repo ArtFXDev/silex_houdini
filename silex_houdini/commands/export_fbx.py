@@ -6,7 +6,6 @@ from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.dialogs import Dialogs
 from silex_client.utils.log import logger
 
-
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -15,6 +14,7 @@ import hou
 import os
 import pathlib
 import gazu
+
 
 class ExportFBX(CommandBase):
 
@@ -68,9 +68,12 @@ class ExportFBX(CommandBase):
 
         # remove fbx export
         fbx_rop.destroy()
-
+        
+        # reup node in temp_subnet into /obj
         selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
         hou.moveNodesTo(selected, hou.node("/obj/"))
+
+        # remove temp_subnet
         temp_subnet.destroy()
 
         # export
