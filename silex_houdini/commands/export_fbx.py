@@ -27,7 +27,7 @@ class ExportFBX(CommandBase):
     
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
         """
-        Helper to prompt the user a label
+        Helper to prompt the user a labelb
         """
         # Create a new parameter to prompt label
 
@@ -69,7 +69,7 @@ class ExportFBX(CommandBase):
         extension = await gazu.files.get_output_type_by_name("fbx")
         temp_outfilename = os.path.join(outdir, f"{outfilename}_{root_name}")
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
-        
+
         # create temp filmboxfbx
         fbx_rop = hou.node("out").createNode("filmboxfbx")
         fbx_rop.parm("sopoutput").set(final_filename)

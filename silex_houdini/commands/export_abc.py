@@ -54,18 +54,19 @@ class ExportABC(CommandBase):
         outfilename = parameters.get("file_name")
         root_name = parameters.get("root_name")
 
-        to_return_paths = []
-
         # get current selection
-        while len(hou.selectedNodes()) == 0:            
+        selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
+        # Test/update current selection
+        while len(selected_object) == 0:
             await self._prompt_label_parameter(action_query)
+            selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]     
+
+        # get list of name ofcurrent selection
+        selected_object = " ".join(selected_object)
 
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-
-        selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
-        selected_object = " ".join(selected_object)
 
         # create a temporary ROP node
         abc_out = hou.node("/out").createNode("alembic")
@@ -78,9 +79,6 @@ class ExportABC(CommandBase):
         abc_out.parm("filename").set(final_filename)
         abc_out.parm("objects").set(selected_object)
         
-        # append to return
-        to_return_paths.append(final_filename)
-
         # Set frame range
         abc_out.parm("trange").set(1)
         abc_out.parmTuple("f").deleteAllKeyframes() # Needed
@@ -94,5 +92,5 @@ class ExportABC(CommandBase):
         abc_out.destroy()
 
         # export
-        logger.info(f"Done export abc, output paths : {to_return_paths}")
-        return to_return_paths
+        logger.info(f"Done export abc, output paths : {final_filename}")
+        return final_filename
