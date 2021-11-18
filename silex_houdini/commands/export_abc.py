@@ -34,7 +34,7 @@ class ExportABC(CommandBase):
 
         label_parameter = ParameterBuffer(
             type=str,
-            name="warning_parameter",
+            name="label_parameter",
             label="No nodes selected, please select Object nodes and retry."
         )
 
@@ -75,7 +75,7 @@ class ExportABC(CommandBase):
         extension = await gazu.files.get_output_type_by_name("abc")
         temp_outfilename = outdir / f"{outfilename}_{root_name}"
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
-        
+
         abc_out.parm("filename").set(final_filename)
         abc_out.parm("objects").set(selected_object)
         

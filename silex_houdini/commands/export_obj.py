@@ -33,8 +33,8 @@ class ExportOBJ(CommandBase):
 
         label_parameter = ParameterBuffer(
             type=str,
-            name="warning_parameter",
-            label="No nodes selected, please select Object nodes and retry."
+            name="label_parameter",
+            label="No nodes selected, please select Sop nodes and retry."
         )
 
         # Prompt the user with a label
