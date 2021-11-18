@@ -23,7 +23,7 @@ class ExportABC(CommandBase):
     parameters = {
         "file_dir": { "label": "Out directory", "type": pathlib.Path},
         "file_name": { "label": "Out filename", "type": pathlib.Path },
-        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False }
+        "root_name": { "label": "Out Object Name", "type": str, "value": "", "hide": False }
     }
 
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
@@ -65,15 +65,14 @@ class ExportABC(CommandBase):
         selected_object = " ".join(selected_object)
 
         # Test output path exist
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        os.makedirs(outdir, exist_ok=True)
 
         # create a temporary ROP node
         abc_out = hou.node("/out").createNode("alembic")
 
         # compute final path
         extension = await gazu.files.get_output_type_by_name("abc")
-        temp_outfilename = outdir / f"{outfilename}_{root_name}"
+        temp_outfilename = outdir / f"{outfilename}_{root_name}" if root_name else outdir / f"{outfilename}"
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
 
         abc_out.parm("filename").set(final_filename)
