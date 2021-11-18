@@ -6,6 +6,7 @@ from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.dialogs import Dialogs
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -22,62 +23,74 @@ class ExportABC(CommandBase):
     parameters = {
         "file_dir": { "label": "Out directory", "type": pathlib.Path},
         "file_name": { "label": "Out filename", "type": pathlib.Path },
-        "frame_range": {
-            "label": "Frame Range",
-            "type": IntArrayParameterMeta(2),
-            "value": [0, 0]
-        }
+        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False }
     }
+
+    async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
+        """
+        Helper to prompt the user a label
+        """
+        # Create a new parameter to prompt label
+
+        label_parameter = ParameterBuffer(
+            type=str,
+            name="label_parameter",
+            label="No nodes selected, please select Object nodes and retry."
+        )
+
+        # Prompt the user with a label
+        label = await self.prompt_user(
+            action_query,
+            { "label": label_parameter }
+        )
+
+        return label["label"]
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        outdir: str = parameters.get("file_dir")
-        outfilename: str = parameters.get("file_name")
-        start_frame = parameters.get("frame_range")[0]
-        end_frame = parameters.get("frame_range")[1]
+        outdir = parameters.get("file_dir")
+        outfilename = parameters.get("file_name")
+        root_name = parameters.get("root_name")
 
-        to_return_paths = []
+        # get current selection
+        selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
+        # Test/update current selection
+        while len(selected_object) == 0:
+            await self._prompt_label_parameter(action_query)
+            selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]     
+
+        # get list of name ofcurrent selection
+        selected_object = " ".join(selected_object)
+
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
+
+        # create a temporary ROP node
+        abc_out = hou.node("/out").createNode("alembic")
+
+        # compute final path
+        extension = await gazu.files.get_output_type_by_name("abc")
+        temp_outfilename = outdir / f"{outfilename}_{root_name}"
+        final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
+
+        abc_out.parm("filename").set(final_filename)
+        abc_out.parm("objects").set(selected_object)
         
-        # get current selection
-        if len(hou.selectedNodes()) == 0:
-            Dialogs().warn("No nodes selected, please select Sop nodes and retry.")
-            raise Exception("No nodes selected, please select Sop nodes and retry.")
+        # Set frame range
+        abc_out.parm("trange").set(1)
+        abc_out.parmTuple("f").deleteAllKeyframes() # Needed
+        range_playbar = hou.playbar.frameRange()
+        abc_out.parmTuple("f").set((range_playbar.x(), range_playbar.y(), 0))
 
-        for node in hou.selectedNodes():
-            if node.type().category().name() != "Sop":
-                Dialogs().warn(f"Action only available with Sop Nodes.\nNode {node.name()} will not be exported!")
-                return ""
-
-            # create a temporary ROP node
-            abc_rop = hou.node(node.parent().path()).createNode('rop_alembic')
-
-            # compute final path
-            extension = await gazu.files.get_output_type_by_name("abc")
-            temp_outfilename = os.path.join(outdir, f"{outfilename}_{node.name()}")
-            final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
-            
-            abc_rop.parm('filename').set(final_filename)
-
-            # append to return
-            to_return_paths.append(final_filename)
-
-            # Set frame range
-            abc_rop.parm("trange").set(1)
-            abc_rop.parmTuple("f").deleteAllKeyframes() # Needed
-            abc_rop.parmTuple('f').set((start_frame, end_frame, 0))
-
-            # link node to object
-            abc_rop.setInput(0, node)
-            abc_rop.parm('execute').pressButton()
-            
-            # remove node
-            abc_rop.destroy()
+        # link node to object
+        abc_out.parm("execute").pressButton()
+        
+        # remove node
+        abc_out.destroy()
 
         # export
-        logger.info(f"Done export abc, output paths : {to_return_paths}")
-        return to_return_paths
+        logger.info(f"Done export abc, output paths : {final_filename}")
+        return final_filename
