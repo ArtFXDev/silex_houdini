@@ -3,7 +3,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.core.context import Context
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -70,7 +70,7 @@ class Save(CommandBase):
 
             # error in future
             if version == "" :
-                Dialogs().err("Failed to get version from regex")
+                logger.error("Failed to get version from regex")
                 return
 
             file_without_version = re.findall("(?![0-9]*$).", working_file_without_extension)

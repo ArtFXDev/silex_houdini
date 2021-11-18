@@ -3,9 +3,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_houdini.utils.dialogs import Dialogs
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import IntArrayParameterMeta
 from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
