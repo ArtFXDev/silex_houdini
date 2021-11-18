@@ -22,7 +22,7 @@ class ExportOBJ(CommandBase):
     parameters = {
         "file_dir": { "label": "Out directory", "type": pathlib.Path, "value": "" },
         "file_name": { "label": "Out filename", "type": pathlib.Path, "value": "" },
-        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False }
+        "root_name": { "label": "Out Object Name", "type": str, "value": "", "hide": False }
     }
 
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
@@ -60,8 +60,7 @@ class ExportOBJ(CommandBase):
             selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
 
         # Test output path exist
-        if not os.path.exists(outdir):
-            os.makedirs(outdir, exist_ok=True)
+        os.makedirs(outdir, exist_ok=True)
         
         # create temp root node
         merge_sop = hou.node(selected_object[0].parent().path()).createNode("merge")
@@ -69,7 +68,7 @@ class ExportOBJ(CommandBase):
             merge_sop.setNextInput(node)
 
         extension = await gazu.files.get_output_type_by_name("obj")
-        temp_outfilename = outdir / f"{outfilename}_{root_name}"
+        temp_outfilename = outdir / f"{outfilename}_{root_name}" if root_name else outdir / f"{outfilename}"
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
         hou.node(merge_sop.path()).geometry().saveToFile(final_filename)
 

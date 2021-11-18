@@ -20,9 +20,9 @@ import gazu
 class ExportFBX(CommandBase):
 
     parameters = {
-        "file_dir": { "label": "Out directory", "type": str, "value": "" },
-        "file_name": { "label": "Out filename", "type": str, "value": "" },
-        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False },
+        "file_dir": { "label": "Out directory", "type": pathlib.Path, "value": "" },
+        "file_name": { "label": "Out filename", "type": pathlib.Path, "value": "" },
+        "root_name": { "label": "Out Object Name", "type": str, "value": "", "hide": False },
     }
     
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
@@ -59,15 +59,14 @@ class ExportFBX(CommandBase):
             await self._prompt_label_parameter(action_query)
 
         # Test output path exist
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        os.makedirs(outdir, exist_ok=True)
 
         selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
         selected_name = [item.name() for item in selected_object ]
 
         # create a temporary ROP node
         extension = await gazu.files.get_output_type_by_name("fbx")
-        temp_outfilename = os.path.join(outdir, f"{outfilename}_{root_name}")
+        temp_outfilename = outdir / f"{outfilename}_{root_name}" if root_name else outdir / f"{outfilename}"
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
 
         # create temp filmboxfbx
