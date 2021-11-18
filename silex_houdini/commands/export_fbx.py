@@ -22,8 +22,28 @@ class ExportFBX(CommandBase):
     parameters = {
         "file_dir": { "label": "Out directory", "type": str, "value": "" },
         "file_name": { "label": "Out filename", "type": str, "value": "" },
-        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False }
+        "root_name": { "label": "Out Object Name", "type": str, "value": None, "hide": False },
     }
+    
+    async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
+        """
+        Helper to prompt the user a label
+        """
+        # Create a new parameter to prompt label
+
+        label_parameter = ParameterBuffer(
+            type=str,
+            name="warning_parameter",
+            label="No nodes selected, please select Object nodes and retry."
+        )
+
+        # Prompt the user with a label
+        label = await self.prompt_user(
+            action_query,
+            { "label": label_parameter }
+        )
+
+        return label["label"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -34,14 +54,13 @@ class ExportFBX(CommandBase):
         outfilename = parameters.get("file_name")
         root_name = parameters.get("root_name")
 
+        # get current selection
+        while len(hou.selectedNodes()) == 0:
+            await self._prompt_label_parameter(action_query)
+
         # Test output path exist
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-
-        # get current selection
-        if len(hou.selectedNodes()) == 0:
-            logger.error("No nodes selected, please select Sop nodes and retry.")
-            raise Exception()
 
         selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
         selected_name = [item.name() for item in selected_object ]
@@ -79,3 +98,9 @@ class ExportFBX(CommandBase):
         # export
         logger.info(f"Done export fbx, output paths : {final_filename}")
         return final_filename
+
+    @CommandBase.conform_command()
+    async def __undo__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        outdir = parameters.get("file_dir")
