@@ -1,9 +1,12 @@
 from __future__ import annotations
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
+import fileseq
 
+import re
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -18,14 +21,19 @@ class SetReferences(CommandBase):
     """
 
     parameters = {
-        "parameters": {
-            "label": "Parameters",
-            "type": list,
+        "attributes": {
+            "label": "Attributes",
+            "type": ListParameterMeta(str),
             "value": None,
         },
         "values": {
             "label": "Values",
-            "type": list,
+            "type": ListParameterMeta(AnyParameter),
+            "value": None,
+        },
+        "indexes": {
+            "label": "Indexes",
+            "type": ListParameterMeta(int),
             "value": None,
         },
     }
@@ -34,30 +42,42 @@ class SetReferences(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        attributes = parameters["attributes"]
+        attributes: List[str] = parameters["attributes"]
+        indexes: List[int] = parameters["indexes"]
 
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
-            if isinstance(value, CommandOutput):
-                value = value.get_value(action_query)
+            value = value.get_value(action_query)[0]
+            value = value.get_value(action_query)
             values.append(value)
 
         # Define the function that will repath all the references
         new_values = []
-        for index, attribute in enumerate(attributes):
+        for attribute, index, values in zip(attributes, indexes, values):
+            value = values
+            if isinstance(value, list):
+                value = value[index]
+
             # If the attribute is an HDA
-            if cmds.nodeType(attribute) == "reference":
-                cmds.file(values[index], loadReference=attribute)
+            if isinstance(attribute, hou.HDADefinition):
+                hou.hda.installFile(value, force_use_assets=True)
                 continue
+
             # If the attribute if from an other referenced scene
-            if cmds.referenceQuery(attribute, isNodeReferenced=True):
-                continue
+            if isinstance(attribute, hou.Parm) or isinstance(attribute, hou.ParmTuple):
+                if isinstance(values, list) and len(value) > 1:
+                    sequence = fileseq.findSequencesInList(values)
+                    raw_value = attribute.rawValue()
+                    index_indicator = raw_value.rfind("$")
+                    index_expression = re.search(r"\W", raw_value[index_indicator:])
+                    if index_indicator >= 0 and match is not None:
+                        pass
+                    else:
+                        logger.warning("Could not recreate the value for the parameter %s", attribute)
 
-            # If it is just a file node or a texture...
-            cmds.setAttr(attribute, values[index], type="string")
-            new_values.append(values[index])
+                attribute.set(value)
 
-        cmds.filePathEditor(rf=True)
+            new_values.append(value)
 
         return new_values

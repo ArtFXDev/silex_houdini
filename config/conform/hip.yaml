@@ -25,7 +25,10 @@ hip:
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             list: !command-output "conform_references:get_references:file_paths"
-            action: "conform"
+            actions: 
+              - "conform"
+            categories:
+              - "action"
             parameter: "setup:get_conform_output:file_path"
             output: "setup:append_conform_action"
 
@@ -38,8 +41,13 @@ hip:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
+            use_current_context: false
+            create_temp_dir: false
+            frame_set:
+              value: 0
+              hide: true
             output_type:
-              value: "ma"
+              value: "hip"
               hide: true
           ask_user: true
         repath_attributes:
