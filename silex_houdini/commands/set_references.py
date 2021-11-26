@@ -67,12 +67,13 @@ class SetReferences(CommandBase):
             # If the attribute if from an other referenced scene
             if isinstance(attribute, hou.Parm) or isinstance(attribute, hou.ParmTuple):
                 if isinstance(values, list) and len(value) > 1:
-                    sequence = fileseq.findSequencesInList(values)
+                    sequence = fileseq.findSequencesInList(values)[0]
                     raw_value = attribute.rawValue()
-                    index_indicator = raw_value.rfind("$")
-                    index_expression = re.search(r"\W", raw_value[index_indicator:])
-                    if index_indicator >= 0 and match is not None:
-                        pass
+                    index_start = raw_value.rfind("$")
+                    index_end = list(re.finditer(r"\W+", raw_value[index_start:]))
+                    if index_start >= 0 and len(index_end) >= 1:
+                        index_expression = raw_value[index_start:index_start + index_end[1].start()]
+                        value = sequence.format("{dirname}{basename}{index_expression}{extension}")
                     else:
                         logger.warning("Could not recreate the value for the parameter %s", attribute)
 
