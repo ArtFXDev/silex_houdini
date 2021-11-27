@@ -1,6 +1,7 @@
 from __future__ import annotations
 import typing
 from typing import Any, Dict, List
+import pathlib
 import fileseq
 
 import re
@@ -73,7 +74,9 @@ class SetReferences(CommandBase):
                     index_end = list(re.finditer(r"\W+", raw_value[index_start:]))
                     if index_start >= 0 and len(index_end) >= 1:
                         index_expression = raw_value[index_start:index_start + index_end[1].start()]
-                        value = sequence.format("{dirname}{basename}{index_expression}{extension}")
+                        dirname = pathlib.Path(str(sequence.dirname()))
+                        basename = sequence.format("{basename}" + str(index_expression) + "{extension}")
+                        value = (dirname / basename).as_posix()
                     else:
                         logger.warning("Could not recreate the value for the parameter %s", attribute)
 
