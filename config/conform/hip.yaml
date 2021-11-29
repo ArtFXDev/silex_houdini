@@ -8,14 +8,14 @@ hip:
           path: "silex_client.commands.pass.Pass"
 
     conform_references:
-      label: "Conform references"
+      label: "Conform Houdini scene's references"
       index: 20
       commands:
         open:
           label: "Open scene to conform"
           path: "silex_houdini.commands.open.Open"
           parameters:
-            file_path: !command-output "input:input"
+            file_path: !command-output "input:input:file_paths"
             save: True
         get_references:
           label: "Get referenced files"
@@ -24,16 +24,17 @@ hip:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            list: !command-output "conform_references:get_references:file_paths"
+            values: !command-output "conform_references:get_references:file_paths"
             actions: 
               - "conform"
             categories:
               - "action"
-            parameter: "setup:get_conform_output:file_path"
-            output: "setup:append_conform_action"
+            parameter: "setup:get_conform_output:file_paths"
+            label_key: "file_paths"
+            output: "setup:append_conform_actions"
 
     conform_scene:
-      label: "Conform scene"
+      label: "Conform Houdini scene"
       index: 30
       commands:
         build_output_path:
@@ -50,32 +51,31 @@ hip:
               value: "hip"
               hide: true
           ask_user: true
-        repath_attributes:
-          label: "Repath attributes"
-          path: "silex_houdini.commands.set_references.SetReferences"
-          tooltip: "Set the new path on the attributes"
-          parameters:
-            attributes: !command-output "conform_references:get_references:attributes"
-            values: !command-output "conform_references:conform_references"
-          ask_user: true
-        save:
-          label: "Save the maya scene to the right location"
-          path: "silex_maya.commands.save.Save"
-          parameters:
-            file_path: !command-output "conform_scene:build_output_path:full_path"
-        open:
-          label: "Open back the original scene"
-          path: "silex_maya.commands.open.Open"
-          parameters:
-            file_path: !command-output "conform_references:open:old_path"
-            save: False
+        #repath_attributes:
+          #label: "Repath attributes"
+          #path: "silex_houdini.commands.set_references.SetReferences"
+          #tooltip: "Set the new path on the attributes"
+          #parameters:
+            #attributes: !command-output "conform_references:get_references:attributes"
+            #values: !command-output "conform_references:conform_references"
+            #indexes: !command-output "conform_references:get_references:indexes"
+        #save:
+          #label: "Save the maya scene to the right location"
+          #path: "silex_maya.commands.save.Save"
+          #parameters:
+            #file_path: !command-output "conform_scene:build_output_path:full_path"
+        #open:
+          #label: "Open back the original scene"
+          #path: "silex_maya.commands.open.Open"
+          #parameters:
+            #file_path: !command-output "conform_references:open:old_path"
+            #save: False
 
-    output:
-      index: 40
-      hide: true
-      commands:
-        output:
-          path: "silex_client.commands.pass.Pass"
-          parameters:
-            input: !command-output "input:input"
-
+    #output:
+      #index: 40
+      #hide: true
+      #commands:
+        #output:
+          #path: "silex_client.commands.pass.Pass"
+          #parameters:
+            #input: !command-output "conform_scene:save:new_path"
