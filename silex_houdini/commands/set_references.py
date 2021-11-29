@@ -1,6 +1,7 @@
 from __future__ import annotations
 import typing
 from typing import Any, Dict, List
+import logging
 import pathlib
 import fileseq
 
@@ -41,7 +42,7 @@ class SetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         attributes: List[str] = parameters["attributes"]
         indexes: List[int] = parameters["indexes"]

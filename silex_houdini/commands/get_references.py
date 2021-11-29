@@ -4,12 +4,12 @@ import pathlib
 import typing
 import fileseq
 import pathlib
+import logging
 from typing import Any, Dict, List, Tuple, Union
 
 import hou
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -40,7 +40,7 @@ class GetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         referenced_files: List[
             Tuple[

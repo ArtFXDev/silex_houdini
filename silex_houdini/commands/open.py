@@ -1,16 +1,15 @@
 from __future__ import annotations
 import typing
+import logging
 from typing import Any, Dict
 
 import pathlib
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import os
 import hou
 
 
@@ -34,7 +33,7 @@ class Open(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         file_path: pathlib.Path = parameters["file_path"]
         save_before_open: bool = parameters["save"]
