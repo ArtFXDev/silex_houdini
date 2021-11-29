@@ -2,16 +2,14 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
+import logging
 from silex_client.action.command_base import CommandBase
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_houdini.utils.dialogs import Dialogs
-
 import os
-import asyncio
 import gazu.files
 import gazu.task
 import re
@@ -22,14 +20,13 @@ class Build(CommandBase):
     
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         async def get_scene_path():
             #task = await gazu.task.get_task(action_query.context_metadata.get("task_id", "ac0e79cf-e5ce-49ff-932f-6aed3d425e4a"))
             task_id = action_query.context_metadata.get("task_id", "none")
             working_file_with_extension = await gazu.files.build_working_file_path(task_id)
             if task_id == "none":
-                Dialogs().warn("Invalid task_id !")
                 return -1, None
 
             current_soft = {
@@ -40,7 +37,6 @@ class Build(CommandBase):
 
             soft = await gazu.files.get_software_by_name(current_soft.get(hou.licenseCategory(), "houdini"))
             if not soft:
-                Dialogs().warn("Sofware not set in Kitsu, file extension will be invalid")
                 return -1, None
             extension = soft.get("file_extension", ".no")
             extension = extension if '.' in extension else f".{extension}" 
@@ -69,7 +65,6 @@ class Build(CommandBase):
 
             # error in future
             if version == "" :
-                Dialogs().warn("Failed to get version from regex")
                 return
 
             file_without_version = re.findall("(?![0-9]*$).", working_file_without_extension)

@@ -2,8 +2,8 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
+import logging
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import IntArrayParameterMeta
 
@@ -52,7 +52,7 @@ class ExportFBX(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
         outdir = parameters.get("file_dir")

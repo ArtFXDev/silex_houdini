@@ -4,17 +4,15 @@ version = "0.1.0"
 
 authors = ["ArtFx TD gang"]
 
-description = \
-    """
+description = """
     Set of python module and houdini config to integrate houdini in the silex pipeline
     Part of the Silex ecosystem
     """
 
 vcs = "git"
 
-requires = ["silex_client", "houdini", "python-3.7"]
-
 build_command = "python {root}/script/build.py {install}"
+
 
 def commands():
     """
@@ -23,3 +21,13 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/config")
     env.PYTHONPATH.append("{root}")
     env.HOUDINI_PATH.append("{root}/startup")
+
+
+@late()
+def requires():
+    major = str(this.version.major)
+    silex_requirement = ["silex_client"]
+    if major in ["dev", "beta", "prod"]:
+        silex_requirement = [f"silex_client-{major}"]
+
+    return ["houdini", "python-3.7"] + silex_requirement
