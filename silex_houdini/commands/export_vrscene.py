@@ -5,7 +5,7 @@ from typing import Any, Dict
 import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-
+from silex_houdini.utils.utils import Utils
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -19,8 +19,8 @@ import logging
 class ExportVrscene(CommandBase):
 
     parameters = {
-    "file_dir": { "label": "Out directory", "type": str, "value": "" },
-    "file_name": { "label": "Out filename", "type": str, "value": "" },
+        "file_dir": { "label": "Out directory", "type": str, "value": "" },
+        "file_name": { "label": "Out filename", "type": str, "value": "" },
     }
 
     async def _prompt_label_parameter(self, action_query: ActionQuery, message: str) -> pathlib.Path:
@@ -48,7 +48,18 @@ class ExportVrscene(CommandBase):
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
+        def export_fbx(selected_object, node, out_file_name, to_return, logger):
+            node_filename = f"{out_file_name}_{node.name()}"
+            node_filename = pathlib.Path(os.path.join(outdir, node_filename))
+            node_filename = str(node_filename.with_suffix(f".{extension['short_name']}"))
+            to_return.append(node_filename)
+            node.parm("render_export_filepath").set(node_filename)
+            node.parm("render_export_mode").set("2")
+            logger.info(f"Done export abc, output paths : {node_filename}")
 
+        def exec(selected_object):
+            selected_object.parm('execute').pressButton()
+            
         outdir = parameters["file_dir"]
         outFilename = parameters["file_name"]
 
@@ -75,7 +86,6 @@ class ExportVrscene(CommandBase):
         not_allowed_rop = [item for item in selected_objects_types if item.type().name() != "vray_renderer"]
         allowed_rop = [item for item in selected_objects_types if item.type().name() == "vray_renderer"]
         
-
         # disable all not allowed rop nodes
         for node in not_allowed_rop:
             node.bypass(1)
@@ -85,20 +95,11 @@ class ExportVrscene(CommandBase):
 
         # set outputpath for each render node
         for node in allowed_rop:
-            node_filename = f"{outFilename}_{node.name()}"
-            node_filename = pathlib.Path(os.path.join(outdir, node_filename))
-            logger.info(node_filename)
-            node_filename = str(node_filename.with_suffix(f".{extension['short_name']}"))
-            logger.info(node_filename)
-            to_return.append(node_filename)
-            node.parm("render_export_filepath").set(node_filename)
-             # comput output path
+            await Utils.wrapped_execute(action_query, export_fbx, selected_object, node, outFilename, to_return, logger)
+        await Utils.wrapped_execute(action_query, exec, selected_object)
 
-            # Render
-            selected_object.parm('execute').pressButton()
         for node in not_allowed_rop:
             node.bypass(0)
 
         # export
-        logger.info(f"Done export abc, output paths : {node_filename}")
         return to_return

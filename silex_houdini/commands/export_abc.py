@@ -20,7 +20,7 @@ import gazu
 class ExportABC(CommandBase):
 
     parameters = {
-        "file_dir": { "label": "Out directory", "type": pathlib.Path},
+        "file_dir": { "label": "Out directory", "type": pathlib.Path },
         "file_name": { "label": "Out filename", "type": pathlib.Path },
         "root_name": { "label": "Out Object Name", "type": str, "value": "", "hide": False },
         "timeline_as_framerange": { "label": "Take framerange frame-range?", "type": bool, "value": False, "hide": False },
