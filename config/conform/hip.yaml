@@ -59,6 +59,10 @@ hip:
             attributes: !command-output "conform_references:get_references:attributes"
             values: !command-output "conform_references:conform_references"
             indexes: !command-output "conform_references:get_references:indexes"
+        clean_hdas:
+          label: "Remove unused HDA definitions"
+          path: "silex_houdini.commands.clear_hdas.ClearHDAs"
+          tooltip: "Uninstall the HDA definitions that where repathed"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_houdini.commands.save.Save"
