@@ -5,6 +5,7 @@ import typing
 import fileseq
 import pathlib
 import logging
+from contextlib import suppress
 from typing import Any, Dict, List, Tuple, Union
 
 import hou
@@ -56,12 +57,20 @@ class GetReferences(CommandBase):
                 continue
 
             file_path = pathlib.Path(hou.expandString(file_path))
-            # Make sure the file path leads to a reachable file
-            while not file_path.exists() or not file_path.is_absolute():
-                logger.warning(
-                    "Could not reach the file %s at %s", file_path, parameter
-                )
-                file_path = await self._prompt_new_path(action_query)
+            logger.warning(file_path)
+            try:
+                # Make sure the file path leads to a reachable file
+                while not file_path.exists() or not file_path.is_absolute():
+                    logger.warning(
+                        "Could not reach the file %s at %s", file_path, parameter
+                    )
+                    file_path = await self._prompt_new_path(action_query)
+            except:
+                sequences = fileseq.findSequencesOnDisk(str(file_path.parent))
+                for sequence in sequences:
+                    if str(sequence.basename()) in str(file_path):
+                        file_path = pathlib.Path(str(sequence[0]))
+                        break
 
             # Initialize the index to -1, which is the value if there is no sequences
             index = -1
