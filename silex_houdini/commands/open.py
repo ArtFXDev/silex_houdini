@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import pathlib
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.utils import Utils
+from silex_houdini.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -51,8 +51,8 @@ class Open(CommandBase):
         file_state: bool = hou.hipFile.hasUnsavedChanges()
         # Save the current scene before openning a new one
         if file_state and save_before_open:
-            await Utils.wrapped_execute(hou.hipFile.save)
+            await Utils.wrapped_execute(action_query, hou.hipFile.save)
         logger.info("Openning file %s", file_path)
 
-        await Utils.wrapped_execute(hou.hipFile.load, file_path.as_posix(), suppress_save_prompt=True)
+        await Utils.wrapped_execute(action_query, hou.hipFile.load, file_path.as_posix(), suppress_save_prompt=True)
         return {"old_path": current_file, "new_path": parameters["file_path"]}
