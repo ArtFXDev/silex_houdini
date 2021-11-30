@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import logging
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -31,6 +32,6 @@ class Save(CommandBase):
         logger.info("Saving scene to %s", file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        hou.hipFile.save(file_name=file_path)
+        await Utils.wrapped_execute(hou.hipFile.save, file_name=file_path)
 
         return {"new_path": file_path}
