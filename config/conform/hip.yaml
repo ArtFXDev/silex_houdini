@@ -61,21 +61,21 @@ hip:
             indexes: !command-output "conform_references:get_references:indexes"
         save:
           label: "Save the maya scene to the right location"
-          path: "silex_maya.commands.save.Save"
+          path: "silex_houdini.commands.save.Save"
           parameters:
             file_path: !command-output "conform_scene:build_output_path:full_path"
         open:
           label: "Open back the original scene"
-          path: "silex_maya.commands.open.Open"
+          path: "silex_houdini.commands.open.Open"
           parameters:
             file_path: !command-output "conform_references:open:old_path"
             save: False
 
-    #output:
-      #index: 40
-      #hide: true
-      #commands:
-        #output:
-          #path: "silex_client.commands.pass.Pass"
-          #parameters:
-            #input: !command-output "conform_scene:save:new_path"
+    output:
+      index: 40
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "conform_scene:save:new_path"
