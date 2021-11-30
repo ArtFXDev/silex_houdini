@@ -28,6 +28,6 @@ class ClearHDAs(CommandBase):
                 if definition.isPreferred():
                     isUsed = True
             
-            if isUsed and hou.text.expandString("$HH") not in hda_file:
+            if not isUsed and hou.text.expandString("$HH") not in hda_file:
                 logger.info("Clearing HDA file %s", hda_file)
                 hou.hda.uninstallFile(hda_file)
