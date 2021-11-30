@@ -75,7 +75,7 @@ class SetReferences(CommandBase):
                     sequence = fileseq.findSequencesInList(values)[0]
                     raw_value = attribute.rawValue()
 
-                    REGEX_MAPPING = {r"\$": r"\W", r"\%.": r"\).", r"\<": r"\>."}
+                    REGEX_MAPPING = {r"\$[FTRN]": r"\W", r"\%.": r"\).", r"\<": r"\>."}
                     for start_regex, end_regex in REGEX_MAPPING.items():
                         index_start = list(re.finditer(start_regex, raw_value))
                         if not index_start:
