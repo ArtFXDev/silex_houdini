@@ -91,6 +91,7 @@ class GetReferences(CommandBase):
             logger.info("Referenced file(s) %s found at %s", file_path, parameter)
 
         return {
-            "parameters": [file[0] for file in referenced_files],
+            "attributes": [file[0] for file in referenced_files],
             "file_paths": [file[1] for file in referenced_files],
+            "indexes": [file[2] for file in referenced_files],
         }

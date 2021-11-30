@@ -8,7 +8,6 @@ import fileseq
 import re
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
-from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -25,7 +24,7 @@ class SetReferences(CommandBase):
     parameters = {
         "attributes": {
             "label": "Attributes",
-            "type": ListParameterMeta(str),
+            "type": ListParameterMeta(AnyParameter),
             "value": None,
         },
         "values": {
@@ -47,28 +46,32 @@ class SetReferences(CommandBase):
         attributes: List[str] = parameters["attributes"]
         indexes: List[int] = parameters["indexes"]
 
-        values = []
+        attribute_values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
             value = value.get_value(action_query)[0]
             value = value.get_value(action_query)
-            values.append(value)
+            attribute_values.append(value)
 
         # Define the function that will repath all the references
         new_values = []
-        for attribute, index, values in zip(attributes, indexes, values):
+        for attribute, index, values in zip(attributes, indexes, attribute_values):
             value = values
-            if isinstance(value, list):
-                value = value[index]
+            if isinstance(values, list):
+                value = values[index]
+
+            # Houdini need posix path
+            value = pathlib.Path(value).as_posix()
 
             # If the attribute is an HDA
             if isinstance(attribute, hou.HDADefinition):
+                logger.info("Installing HDA at path %s", value)
                 hou.hda.installFile(value, force_use_assets=True)
                 continue
 
             # If the attribute if from an other referenced scene
             if isinstance(attribute, hou.Parm) or isinstance(attribute, hou.ParmTuple):
-                if isinstance(values, list) and len(value) > 1:
+                if isinstance(values, list) and len(values) > 1:
                     sequence = fileseq.findSequencesInList(values)[0]
                     raw_value = attribute.rawValue()
                     index_start = raw_value.rfind("$")
@@ -81,6 +84,7 @@ class SetReferences(CommandBase):
                     else:
                         logger.warning("Could not recreate the value for the parameter %s", attribute)
 
+                logger.info("Setting attribute %s to %s", attribute, value)
                 attribute.set(value)
 
             new_values.append(value)

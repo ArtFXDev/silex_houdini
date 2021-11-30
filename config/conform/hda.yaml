@@ -1,41 +1,15 @@
 hda:
   steps:
     input:
+      hide: true
       index: 10
-      hide: True
       commands:
         input:
           path: "silex_client.commands.pass.Pass"
 
-    conform_references:
-      label: "Conform Houdini scene's references"
+    conform:
+      label: "Conform"
       index: 20
-      commands:
-        open:
-          label: "Open scene to conform"
-          path: "silex_houdini.commands.open.Open"
-          parameters:
-            file_path: !command-output "input:input:file_paths"
-            save: True
-        get_references:
-          label: "Get referenced files"
-          path: "silex_houdini.commands.get_references.GetReferences"
-        conform_references:
-          label: "Conform references found"
-          path: "silex_client.commands.iterate_action.IterateAction"
-          parameters:
-            values: !command-output "conform_references:get_references:file_paths"
-            actions: 
-              - "conform"
-            categories:
-              - "action"
-            parameter: "setup:get_conform_output:file_paths"
-            label_key: "file_paths"
-            output: "setup:append_conform_actions"
-
-    conform_scene:
-      label: "Conform Houdini scene"
-      index: 30
       commands:
         build_output_path:
           label: "Build output path"
@@ -44,38 +18,31 @@ hda:
           parameters:
             use_current_context: false
             create_temp_dir: false
-            frame_set:
-              value: 0
-              hide: true
+            frame_set: !command-output "input:input:frame_set"
             output_type:
-              value: "hip"
+              value: "hda"
               hide: true
+            name: !command-output "input:input:file_paths"
           ask_user: true
-        repath_attributes:
-          label: "Repath attributes"
-          path: "silex_houdini.commands.set_references.SetReferences"
-          tooltip: "Set the new path on the attributes"
+        copy:
+          label: "Copy file to pipeline"
+          path: "silex_client.commands.copy.Copy"
+          ask_user: True
           parameters:
-            attributes: !command-output "conform_references:get_references:attributes"
-            values: !command-output "conform_references:conform_references"
-            indexes: !command-output "conform_references:get_references:indexes"
-        save:
-          label: "Save the maya scene to the right location"
-          path: "silex_houdini.commands.save.Save"
+            src: !command-output "input:input:file_paths"
+            dst: !command-output "conform:build_output_path:directory"
+        rename:
+          label: "Rename the copied files"
+          path: "silex_client.commands.rename.Rename"
           parameters:
-            file_path: !command-output "conform_scene:build_output_path:full_path"
-        open:
-          label: "Open back the original scene"
-          path: "silex_houdini.commands.open.Open"
-          parameters:
-            file_path: !command-output "conform_references:open:old_path"
-            save: False
+            src: !command-output "conform:copy:destination_paths"
+            name: !command-output "conform:build_output_path:full_name"
 
     output:
-      index: 40
+      index: 30
       hide: true
       commands:
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "conform_scene:save:new_path"
+            input: !command-output "conform:rename:new_paths"
