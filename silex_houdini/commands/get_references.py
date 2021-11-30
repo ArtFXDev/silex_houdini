@@ -5,7 +5,7 @@ import typing
 import fileseq
 import pathlib
 import logging
-from contextlib import suppress
+import re
 from typing import Any, Dict, List, Tuple, Union
 
 import hou
@@ -21,6 +21,15 @@ class GetReferences(CommandBase):
     """
     Find all the referenced files, including textures, HDAs...
     """
+
+    parameters = {
+        "skip_conformed": {
+            "label": "Skip conformed references",
+            "type": bool,
+            "value": True,
+            "tooltip": "The references that point to a file that is already in the right folder will be skipped"
+        }
+    }
 
     async def _prompt_new_path(self, action_query: ActionQuery) -> pathlib.Path:
         """
@@ -57,7 +66,6 @@ class GetReferences(CommandBase):
                 continue
 
             file_path = pathlib.Path(hou.expandString(file_path))
-            logger.warning(file_path)
             try:
                 # Make sure the file path leads to a reachable file
                 while not file_path.exists() or not file_path.is_absolute():
@@ -71,6 +79,11 @@ class GetReferences(CommandBase):
                     if str(sequence.basename()) in str(file_path):
                         file_path = pathlib.Path(str(sequence[0]))
                         break
+
+            # Skip the references that are already conformed
+            if parameters["skip_conformed"]:
+                if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
+                    continue
 
             # Initialize the index to -1, which is the value if there is no sequences
             index = -1
