@@ -31,22 +31,31 @@ class GetReferences(CommandBase):
         }
     }
 
-    async def _prompt_new_path(self, action_query: ActionQuery) -> pathlib.Path:
+    async def _prompt_new_path(self, action_query: ActionQuery) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
         # Create a new parameter to prompt for the new file path
-        new_parameter = ParameterBuffer(
+        path_parameter = ParameterBuffer(
             type=pathlib.Path,
             name="new_path",
             label=f"New path",
         )
-        # Prompt the user to get the new path
-        file_path = await self.prompt_user(
-            action_query,
-            {"new_path": new_parameter},
+        skip_parameter = ParameterBuffer(
+            type=bool,
+            name="skip",
+            value=False,
+            label=f"Skip this reference",
         )
-        return pathlib.Path(file_path["new_path"])
+        # Prompt the user to get the new path
+        response = await self.prompt_user(
+            action_query,
+            {"new_path": path_parameter,
+            "skip": skip_parameter},
+        )
+        if response["new_path"] is not None:
+            response["new_path"] = pathlib.Path(response["new_path"])
+        return response["new_path"], response["skip"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -68,12 +77,19 @@ class GetReferences(CommandBase):
             file_path = pathlib.Path(hou.expandString(file_path))
             try:
                 # Make sure the file path leads to a reachable file
+                skip = False
                 while not file_path.exists() or not file_path.is_absolute():
                     logger.warning(
                         "Could not reach the file %s at %s", file_path, parameter
                     )
-                    file_path = await self._prompt_new_path(action_query)
-            except:
+                    file_path, skip = await self._prompt_new_path(action_query)
+                    if skip or file_path is None:
+                        break
+                # The user can decide to skip the references that are not reachable
+                if skip or file_path is None:
+                    logger.info("Skipping the reference at %s", parameter)
+                    continue
+            except OSError:
                 sequences = fileseq.findSequencesOnDisk(str(file_path.parent))
                 for sequence in sequences:
                     if str(sequence.basename()) in str(file_path):
@@ -95,22 +111,29 @@ class GetReferences(CommandBase):
                 ".hdalc",
             ]:
                 for definition in hou.hda.definitionsInFile(file_path.as_posix()):
+                    if file_path in [referenced_file[1] for referenced_file in referenced_files]:
+                        break
                     logger.info("Referenced HDA %s found at %s", file_path, definition)
                     referenced_files.append((definition, file_path, index))
                 continue
 
             # Look for a file sequence
+            sequence = None
             for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
                 # Find the file sequence that correspond the to file we are looking for
                 sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
                 if file_path in sequence_list and len(sequence_list) > 1:
+                    sequence = file_sequence
                     index = sequence_list.index(file_path)
                     file_path = sequence_list
                     break
 
             # Append to the verified path
             referenced_files.append((parameter, file_path, index))
-            logger.info("Referenced file(s) %s found at %s", file_path, parameter)
+            if sequence is None:
+                logger.info("Referenced file(s) %s found at %s", file_path, parameter)
+            else:
+                logger.info("Referenced file(s) %s found at %s", sequence, parameter)
 
         return {
             "attributes": [file[0] for file in referenced_files],

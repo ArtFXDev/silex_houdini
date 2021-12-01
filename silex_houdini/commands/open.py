@@ -2,6 +2,7 @@ from __future__ import annotations
 import typing
 import logging
 from typing import Any, Dict
+from contextlib import suppress
 
 import pathlib
 from silex_client.action.command_base import CommandBase
@@ -49,10 +50,12 @@ class Open(CommandBase):
 
         # Check if there is some modifications to save
         file_state: bool = hou.hipFile.hasUnsavedChanges()
-        # Save the current scene before openning a new one
-        if file_state and save_before_open:
-            await Utils.wrapped_execute(action_query, hou.hipFile.save)
-        logger.info("Openning file %s", file_path)
+        with suppress(hou.OperationFailed):
+            # Save the current scene before openning a new one
+            if file_state and save_before_open:
+                await Utils.wrapped_execute(action_query, hou.hipFile.save)
+            logger.info("Openning file %s", file_path)
+            # Open the given scene in the main thread
+            await Utils.wrapped_execute(action_query, hou.hipFile.load, file_path.as_posix(), suppress_save_prompt=True)
 
-        await Utils.wrapped_execute(action_query, hou.hipFile.load, file_path.as_posix(), suppress_save_prompt=True)
         return {"old_path": current_file, "new_path": parameters["file_path"]}
