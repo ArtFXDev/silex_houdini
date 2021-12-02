@@ -53,7 +53,7 @@ class Open(CommandBase):
 
         # Check if there is some modifications to save
         file_state: bool = hou.hipFile.hasUnsavedChanges()
-        with suppress(hou.OperationFailed):
+        with suppress(hou.OperationFailed, hou.LoadWarning):
             # Save the current scene before openning a new one
             if file_state and save_before_open:
                 await Utils.wrapped_execute(action_query, hou.hipFile.save)
