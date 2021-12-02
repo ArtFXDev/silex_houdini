@@ -20,15 +20,25 @@ import gazu
 class ExportABC(CommandBase):
 
     parameters = {
-        "file_dir": { "label": "Out directory", "type": pathlib.Path},
-        "file_name": { "label": "Out filename", "type": pathlib.Path },
-        "root_name": { "label": "Out Object Name", "type": str, "value": "", "hide": False },
-        "timeline_as_framerange": { "label": "Take framerange frame-range?", "type": bool, "value": False, "hide": False },
+        "file_dir": {"label": "Out directory", "type": pathlib.Path},
+        "file_name": {"label": "Out filename", "type": pathlib.Path},
+        "root_name": {
+            "label": "Out Object Name",
+            "type": str,
+            "value": "",
+            "hide": False,
+        },
+        "timeline_as_framerange": {
+            "label": "Take framerange frame-range?",
+            "type": bool,
+            "value": False,
+            "hide": False,
+        },
         "frame_range": {
             "label": "Frame Range",
             "type": IntArrayParameterMeta(2),
-            "value": [0, 0]
-        }
+            "value": [0, 0],
+        },
     }
 
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
@@ -40,20 +50,20 @@ class ExportABC(CommandBase):
         label_parameter = ParameterBuffer(
             type=str,
             name="label_parameter",
-            label="No nodes selected, please select Object nodes and retry."
+            label="No nodes selected, please select Object nodes and retry.",
         )
 
         # Prompt the user with a label
-        label = await self.prompt_user(
-            action_query,
-            { "label": label_parameter }
-        )
+        label = await self.prompt_user(action_query, {"label": label_parameter})
 
         return label["label"]
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         outdir = parameters.get("file_dir")
         outfilename = parameters.get("file_name")
@@ -63,11 +73,19 @@ class ExportABC(CommandBase):
         end_frame = parameters.get("frame_range")[1]
 
         # get current selection
-        selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]
+        selected_object = [
+            item.path()
+            for item in hou.selectedNodes()
+            if item.type().category().name() == "Object"
+        ]
         # Test/update current selection
         while len(selected_object) == 0:
             await self._prompt_label_parameter(action_query)
-            selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Object" ]     
+            selected_object = [
+                item.path()
+                for item in hou.selectedNodes()
+                if item.type().category().name() == "Object"
+            ]
 
         # get list of name ofcurrent selection
         selected_object = " ".join(selected_object)
@@ -80,12 +98,18 @@ class ExportABC(CommandBase):
 
         # compute final path
         extension = await gazu.files.get_output_type_by_name("abc")
-        temp_outfilename = outdir / f"{outfilename}_{root_name}" if root_name else outdir / f"{outfilename}"
-        final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
+        temp_outfilename = (
+            outdir / f"{outfilename}_{root_name}"
+            if root_name
+            else outdir / f"{outfilename}"
+        )
+        final_filename = str(
+            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
+        )
 
         abc_out.parm("filename").set(final_filename)
         abc_out.parm("objects").set(selected_object)
-        
+
         # Set frame range
         if used_timeline:
             range_playbar = hou.playbar.frameRange()
@@ -94,13 +118,13 @@ class ExportABC(CommandBase):
 
         # Set frame range
         abc_out.parm("trange").set(1)
-        abc_out.parmTuple("f").deleteAllKeyframes() # Needed
-        
+        abc_out.parmTuple("f").deleteAllKeyframes()  # Needed
+
         abc_out.parmTuple("f").set((start_frame, end_frame, 0))
 
         # link node to object
         abc_out.parm("execute").pressButton()
-        
+
         # remove node
         abc_out.destroy()
 

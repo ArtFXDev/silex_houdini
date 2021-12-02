@@ -19,9 +19,14 @@ import pathlib
 class ExportBGEO(CommandBase):
 
     parameters = {
-        "file_dir": { "label": "Out directory", "type": pathlib.Path, "value": "" },
-        "file_name": { "label": "Out filename", "type": pathlib.Path, "value": "" },
-        "root_name": { "label": "Out Object Name", "type": str, "value": "", "hide": False }
+        "file_dir": {"label": "Out directory", "type": pathlib.Path, "value": ""},
+        "file_name": {"label": "Out filename", "type": pathlib.Path, "value": ""},
+        "root_name": {
+            "label": "Out Object Name",
+            "type": str,
+            "value": "",
+            "hide": False,
+        },
     }
 
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
@@ -33,14 +38,11 @@ class ExportBGEO(CommandBase):
         label_parameter = ParameterBuffer(
             type=str,
             name="label_parameter",
-            label="No nodes selected, please select Sop nodes and retry."
+            label="No nodes selected, please select Sop nodes and retry.",
         )
 
         # Prompt the user with a label
-        label = await self.prompt_user(
-            action_query,
-            { "label": label_parameter }
-        )
+        label = await self.prompt_user(action_query, {"label": label_parameter})
         return label["label"]
 
     @CommandBase.conform_command()
@@ -54,26 +56,40 @@ class ExportBGEO(CommandBase):
         # get current selection
         while len(selected_object) == 0:
             await self._prompt_label_parameter(action_query)
-            selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Rop" ]     
-        
+            selected_object = [
+                item.path()
+                for item in hou.selectedNodes()
+                if item.type().category().name() == "Rop"
+            ]
+
         # inputDependencies
 
         # get current selection
         while len(selected_object) == 0:
             await self._prompt_label_parameter(action_query)
-            selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
+            selected_object = [
+                item
+                for item in hou.selectedNodes()
+                if item.type().category().name() == "Sop"
+            ]
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
-        
+
         # create temp root node
         merge_sop = hou.node(selected_object[0].parent().path()).createNode("merge")
         for node in selected_object:
             merge_sop.setNextInput(node)
 
         extension = await gazu.files.get_output_type_by_name("bgeo")
-        temp_outfilename = outdir / f"{outfilename}_{root_name}" if root_name else outdir / f"{outfilename}"
-        final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
+        temp_outfilename = (
+            outdir / f"{outfilename}_{root_name}"
+            if root_name
+            else outdir / f"{outfilename}"
+        )
+        final_filename = str(
+            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
+        )
         hou.node(merge_sop.path()).geometry().saveToFile(final_filename)
 
         # remove temp_subnet

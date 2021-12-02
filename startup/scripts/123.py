@@ -76,4 +76,3 @@ def create_shelf():
 
 Context.get().start_services()
 create_shelf()
-
