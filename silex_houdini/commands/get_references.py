@@ -27,11 +27,13 @@ class GetReferences(CommandBase):
             "label": "Skip conformed references",
             "type": bool,
             "value": True,
-            "tooltip": "The references that point to a file that is already in the right folder will be skipped"
+            "tooltip": "The references that point to a file that is already in the right folder will be skipped",
         }
     }
 
-    async def _prompt_new_path(self, action_query: ActionQuery) -> Tuple[pathlib.Path, bool]:
+    async def _prompt_new_path(
+        self, action_query: ActionQuery
+    ) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
@@ -50,8 +52,7 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"new_path": path_parameter,
-            "skip": skip_parameter},
+            {"new_path": path_parameter, "skip": skip_parameter},
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -59,7 +60,10 @@ class GetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         referenced_files: List[
             Tuple[
@@ -89,6 +93,7 @@ class GetReferences(CommandBase):
                 if skip or file_path is None:
                     logger.info("Skipping the reference at %s", parameter)
                     continue
+
             except OSError:
                 sequences = fileseq.findSequencesOnDisk(str(file_path.parent))
                 for sequence in sequences:
@@ -98,7 +103,10 @@ class GetReferences(CommandBase):
 
             # Skip the references that are already conformed
             if parameters["skip_conformed"]:
-                if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
+                if (
+                    re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent))
+                    is not None
+                ):
                     continue
 
             # Initialize the index to -1, which is the value if there is no sequences
@@ -111,7 +119,9 @@ class GetReferences(CommandBase):
                 ".hdalc",
             ]:
                 for definition in hou.hda.definitionsInFile(file_path.as_posix()):
-                    if file_path in [referenced_file[1] for referenced_file in referenced_files]:
+                    if file_path in [
+                        referenced_file[1] for referenced_file in referenced_files
+                    ]:
                         break
                     logger.info("Referenced HDA %s found at %s", file_path, definition)
                     referenced_files.append((definition, file_path, index))

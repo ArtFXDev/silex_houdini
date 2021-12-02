@@ -35,7 +35,10 @@ class Open(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         file_path: pathlib.Path = parameters["file_path"]
         save_before_open: bool = parameters["save"]
@@ -56,6 +59,11 @@ class Open(CommandBase):
                 await Utils.wrapped_execute(action_query, hou.hipFile.save)
             logger.info("Openning file %s", file_path)
             # Open the given scene in the main thread
-            await Utils.wrapped_execute(action_query, hou.hipFile.load, file_path.as_posix(), suppress_save_prompt=True)
+            await Utils.wrapped_execute(
+                action_query,
+                hou.hipFile.load,
+                file_path.as_posix(),
+                suppress_save_prompt=True,
+            )
 
         return {"old_path": current_file, "new_path": parameters["file_path"]}

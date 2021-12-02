@@ -41,7 +41,10 @@ class SetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         attributes: List[str] = parameters["attributes"]
         indexes: List[int] = parameters["indexes"]
@@ -81,14 +84,20 @@ class SetReferences(CommandBase):
                         if not index_start:
                             continue
                         index_start = index_start[-1].start()
-                        index_end = list(re.finditer(end_regex, raw_value[index_start+1:]))
+                        index_end = list(
+                            re.finditer(end_regex, raw_value[index_start + 1 :])
+                        )
                         if not index_end:
                             continue
                         index_end = index_end[0].end()
 
-                        index_expression = raw_value[index_start:index_start + index_end]
+                        index_expression = raw_value[
+                            index_start : index_start + index_end
+                        ]
                         dirname = pathlib.Path(str(sequence.dirname()))
-                        basename = sequence.format("{basename}" + str(index_expression) + "{extension}")
+                        basename = sequence.format(
+                            "{basename}" + str(index_expression) + "{extension}"
+                        )
                         value = (dirname / basename).as_posix()
 
                 logger.info("Setting attribute %s to %s", attribute, value)

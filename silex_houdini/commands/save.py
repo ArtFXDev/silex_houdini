@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 import os
 import hou
 
+
 class Save(CommandBase):
     """
     Save current scene with context as path
@@ -22,10 +23,13 @@ class Save(CommandBase):
     parameters = {
         "file_path": {"label": "filename", "type": str, "value": None, "hide": False}
     }
-    
+
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         file_path: pathlib.Path = parameters["file_path"]
 

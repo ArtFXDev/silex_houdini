@@ -19,7 +19,10 @@ class ClearHDAs(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         hda_files = hou.hda.loadedFiles()
         for hda_file in hda_files:
@@ -27,7 +30,7 @@ class ClearHDAs(CommandBase):
             for definition in hou.hda.definitionsInFile(hda_file):
                 if definition.isPreferred():
                     isUsed = True
-            
+
             if not isUsed and hou.text.expandString("$HH") not in hda_file:
                 logger.info("Clearing HDA file %s", hda_file)
                 hou.hda.uninstallFile(hda_file)

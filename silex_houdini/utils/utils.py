@@ -8,7 +8,9 @@ from concurrent import futures
 
 class Utils:
     @staticmethod
-    async def wrapped_execute(action_query, houdini_function: Callable, *args, **kwargs):
+    async def wrapped_execute(
+        action_query, houdini_function: Callable, *args, **kwargs
+    ):
 
         future = action_query.event_loop.loop.create_future()
 
@@ -42,4 +44,3 @@ class Utils:
         future.add_done_callback(callback)
         await asyncio.wait_for(future, None)
         return future
-      
