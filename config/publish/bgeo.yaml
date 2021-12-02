@@ -21,8 +21,8 @@ bgeo:
           parameters:
             src: !command-output "export:export_bgeo"
             dst: !command-output "setup:build_output_path:directory"
-    #     # remove:
-        #   label: "Remove temp directory"
-        #   path: "silex_client.commands.remove.Remove"
-        #   parameters:
-        #     file_path: !command-output "setup:build_output_path:temp_directory"
+        remove:
+          label: "Remove temp directory"
+          path: "silex_client.commands.remove.Remove"
+          parameters:
+            file_path: !command-output "setup:build_output_path:temp_directory"
