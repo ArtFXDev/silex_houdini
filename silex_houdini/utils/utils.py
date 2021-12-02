@@ -8,9 +8,7 @@ from concurrent import futures
 
 class Utils:
     @staticmethod
-    async def wrapped_execute(
-        action_query, houdini_function: Callable, *args, **kwargs
-    ):
+    async def wrapped_execute(action_query, houdini_function: Callable, *args, **kwargs):
 
         future = action_query.event_loop.loop.create_future()
 
