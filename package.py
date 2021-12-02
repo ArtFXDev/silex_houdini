@@ -21,6 +21,7 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/config")
     env.PYTHONPATH.append("{root}")
     env.HOUDINI_PATH.append("{root}/startup")
+    env.PYTHONPATH.append("{root}/startup/scripts")
 
 
 @late()
