@@ -14,63 +14,110 @@ import hou
 import os
 import pathlib
 import gazu
+import logging
 
 
 class ExportVrscene(CommandBase):
 
     parameters = {
-    "file_dir": { "label": "Out directory", "type": str, "value": "" },
-    "file_name": { "label": "Out filename", "type": str, "value": "" },
-    "framerange": { "label": "Take timeline as frame-range?", "type": bool, "value": False },
-    "camera": {
-        "type": SelectParameterMeta(
-        *[c.path() for c in hou.node("/obj").children() if c.parent().recursiveGlob(c.path(), hou.nodeTypeFilter.ObjCamera)]
-        ),
-        "value": "No camera"
-        }
+        "file_dir": {"label": "Out directory", "type": str, "value": ""},
+        "file_name": {"label": "Out filename", "type": str, "value": ""},
     }
+
+    async def _prompt_label_parameter(
+        self, action_query: ActionQuery, message: str
+    ) -> pathlib.Path:
+        """
+        Helper to prompt the user a labelb
+        """
+        # Create a new parameter to prompt label
+
+        label_parameter = ParameterBuffer(
+            type=str, name="label_parameter", label=f"{message}"
+        )
+
+        # Prompt the user with a label
+        label = await self.prompt_user(action_query, {"label": label_parameter})
+
+        return label["label"]
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
 
         outdir = parameters["file_dir"]
         outFilename = parameters["file_name"]
 
+        to_return = []
         # create out dir if not exist
         if not os.path.exists(outdir):
-                os.makedirs(outdir)
+            os.makedirs(outdir)
 
-        # create a temporary ROP node
-        vray_renderer = hou.node('/out').createNode('vray_renderer')
-        vray_renderer.parm('vobject').set("*")
-        vray_renderer.parm('render_export_mode').set("2")
-        final_filename = os.path.join(outdir, outFilename)
-        
+        # get current selection
+        selected_object = [
+            item
+            for item in hou.selectedNodes()
+            if item.type().name() == "vray_renderer"
+        ]
+        while len(selected_object) != 1:
+            await self._prompt_label_parameter(action_query, "Invalid node selected.")
+            selected_object = [
+                item
+                for item in hou.selectedNodes()
+                if item.type().name() == "vray_renderer"
+            ]
+        selected_object = selected_object[0]
+
+        # inputDependencies
+        # test current selection only composed of vrscene rop nodes
+        selected_objects_types = selected_object.inputDependencies()
+        logger.info(selected_objects_types)
+
+        selected_objects_types = [
+            item[0] for item in selected_objects_types
+        ]  # [0] to avoid frames
+        logger.info(selected_objects_types)
+
+        not_allowed_rop = [
+            item
+            for item in selected_objects_types
+            if item.type().name() != "vray_renderer"
+        ]
+        allowed_rop = [
+            item
+            for item in selected_objects_types
+            if item.type().name() == "vray_renderer"
+        ]
+
+        # disable all not allowed rop nodes
+        for node in not_allowed_rop:
+            node.bypass(1)
+
+        # get extension from api
         extension = await gazu.files.get_output_type_by_name("vrscene")
-        final_filename = str(pathlib.Path(final_filename).with_suffix(f".{extension['short_name']}"))
 
-        vray_renderer.parm("render_export_filepath").set(final_filename)
+        # set outputpath for each render node
+        for node in allowed_rop:
+            node_filename = f"{outFilename}_{node.name()}"
+            node_filename = pathlib.Path(os.path.join(outdir, node_filename))
+            logger.info(node_filename)
+            node_filename = str(
+                node_filename.with_suffix(f".{extension['short_name']}")
+            )
+            logger.info(node_filename)
+            to_return.append(node_filename)
+            node.parm("render_export_filepath").set(node_filename)
+            # comput output path
 
-        # link selected camera
-        vray_renderer.parm("render_camera").set(parameters["camera"])
-
-        # Set frame range
-        if parameters["framerange"]:
-            vray_renderer.parm("trange").set(1)
-
-            range_playbar = hou.playbar.frameRange()
-            vray_renderer.parm("f1").set(range_playbar.x())
-            vray_renderer.parm("f2").set(range_playbar.y())
-            vray_renderer.parm("f3").set(1)
-
-        # Render
-        vray_renderer.parm('execute').pressButton()
-
-        # remove node
-        vray_renderer.destroy()
+            # Render
+            selected_object.parm("execute").pressButton()
+        for node in not_allowed_rop:
+            node.bypass(0)
 
         # export
-        logger.info(f"Done export abc, output paths : {final_filename}")
-        return final_filename
+        logger.info(f"Done export abc, output paths : {node_filename}")
+        return to_return

@@ -2,8 +2,8 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-import logging
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.log import logger
 from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
@@ -16,7 +16,7 @@ import gazu
 import pathlib
 
 
-class ExportOBJ(CommandBase):
+class ExportBGEO(CommandBase):
 
     parameters = {
         "file_dir": {"label": "Out directory", "type": pathlib.Path, "value": ""},
@@ -47,20 +47,22 @@ class ExportOBJ(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         outdir = parameters["file_dir"]
         outfilename = parameters["file_name"]
         root_name = parameters.get("root_name")
 
-        selected_object = [
-            item
-            for item in hou.selectedNodes()
-            if item.type().category().name() == "Sop"
-        ]
+        # get current selection
+        while len(selected_object) == 0:
+            await self._prompt_label_parameter(action_query)
+            selected_object = [
+                item.path()
+                for item in hou.selectedNodes()
+                if item.type().category().name() == "Rop"
+            ]
+
+        # inputDependencies
 
         # get current selection
         while len(selected_object) == 0:
@@ -79,7 +81,7 @@ class ExportOBJ(CommandBase):
         for node in selected_object:
             merge_sop.setNextInput(node)
 
-        extension = await gazu.files.get_output_type_by_name("obj")
+        extension = await gazu.files.get_output_type_by_name("bgeo")
         temp_outfilename = (
             outdir / f"{outfilename}_{root_name}"
             if root_name
