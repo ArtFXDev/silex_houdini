@@ -39,14 +39,11 @@ class ExportBGEO(CommandBase):
         label_parameter = ParameterBuffer(
             type=str,
             name="label_parameter",
-            label="No nodes selected, please select Sop nodes and retry."
+            label="No nodes selected, please select Sop nodes and retry.",
         )
 
         # Prompt the user with a label
-        label = await self.prompt_user(
-            action_query,
-            { "label": label_parameter }
-        )
+        label = await self.prompt_user(action_query, {"label": label_parameter})
         return label["label"]
 
     @CommandBase.conform_command()
@@ -69,7 +66,11 @@ class ExportBGEO(CommandBase):
         # get current selection
         while len(selected_object) == 0:
             await self._prompt_label_parameter(action_query)
-            selected_object = [item for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
+            selected_object = [
+                item
+                for item in hou.selectedNodes()
+                if item.type().category().name() == "Sop"
+            ]
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
