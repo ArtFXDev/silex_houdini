@@ -81,7 +81,6 @@ class ExportBGEO(CommandBase):
 
         # create temp root node
         merge_sop = hou.node(hou.node(selected_object[0]).parent().path()).createNode("merge")
-        logger.info(merge_sop.path())
         for node in selected_object:
             node = hou.node(node)
             merge_sop.setNextInput(node)
