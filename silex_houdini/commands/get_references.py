@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Tuple, Union
 import hou
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import TextParameterMeta
+from silex_houdini.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -32,12 +34,18 @@ class GetReferences(CommandBase):
     }
 
     async def _prompt_new_path(
-        self, action_query: ActionQuery
+            self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
     ) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
         # Create a new parameter to prompt for the new file path
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta("warning"),
+            name="info",
+            label=f"Info",
+            value=f"The file {file_path} referenced in {parameter} could not be reached"
+        )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
             name="new_path",
@@ -52,7 +60,7 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"new_path": path_parameter, "skip": skip_parameter},
+            {"info": info_parameter, "new_path": path_parameter, "skip": skip_parameter},
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -73,20 +81,23 @@ class GetReferences(CommandBase):
             ]
         ] = []
 
-        for parameter, file_path in hou.fileReferences():
-            # Skip the references that are in a locked HDA
-            if isinstance(parameter, hou.Parm) and parameter.node().isInsideLockedHDA():
-                continue
+        scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
 
-            file_path = pathlib.Path(hou.expandString(file_path))
+        for parameter, file_path in await scene_references:
+            # Skip the references that are in a locked HDA
+            if isinstance(parameter, hou.Parm):
+                is_locked_lamnda = lambda: parameter.node().isInsideLockedHDA()
+                is_locked = await Utils.wrapped_execute(action_query, is_locked_lamnda)
+                if await is_locked:
+                    continue
+
+            expanded_path = await Utils.wrapped_execute(action_query, hou.expandString, file_path)
+            file_path = pathlib.Path(await expanded_path)
             try:
                 # Make sure the file path leads to a reachable file
                 skip = False
                 while not file_path.exists() or not file_path.is_absolute():
-                    logger.warning(
-                        "Could not reach the file %s at %s", file_path, parameter
-                    )
-                    file_path, skip = await self._prompt_new_path(action_query)
+                    file_path, skip = await self._prompt_new_path(action_query, file_path, parameter)
                     if skip or file_path is None:
                         break
                 # The user can decide to skip the references that are not reachable
@@ -118,7 +129,8 @@ class GetReferences(CommandBase):
                 ".hdanc",
                 ".hdalc",
             ]:
-                for definition in hou.hda.definitionsInFile(file_path.as_posix()):
+                definitions = await Utils.wrapped_execute(action_query, hou.hda.definitionsInFile, file_path.as_posix())
+                for definition in await definitions:
                     if file_path in [
                         referenced_file[1] for referenced_file in referenced_files
                     ]:
