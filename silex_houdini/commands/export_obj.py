@@ -5,6 +5,7 @@ from typing import Any, Dict
 import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_houdini.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -52,9 +53,23 @@ class ExportOBJ(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        outdir = parameters["file_dir"]
-        outfilename = parameters["file_name"]
+        outdir = parameters.get("file_dir")
+        outfilename = parameters.get("file_name")
         root_name = parameters.get("root_name")
+
+        def export_obj(selected_object, final_filename):
+            merge_sop = hou.node(selected_object[0].parent().path()).createNode("merge")
+            
+            # create temp root node
+            for node in selected_object:
+                merge_sop.setNextInput(node)
+            # Test output path exist
+            os.makedirs(outdir, exist_ok=True)
+
+            hou.node(merge_sop.path()).geometry().saveToFile(final_filename)        
+
+            # remove temp_subnet
+            merge_sop.destroy()
 
         selected_object = [
             item
@@ -71,27 +86,17 @@ class ExportOBJ(CommandBase):
                 if item.type().category().name() == "Sop"
             ]
 
-        # Test output path exist
-        os.makedirs(outdir, exist_ok=True)
-
-        # create temp root node
-        merge_sop = hou.node(selected_object[0].parent().path()).createNode("merge")
-        for node in selected_object:
-            merge_sop.setNextInput(node)
-
         extension = await gazu.files.get_output_type_by_name("obj")
         temp_outfilename = (
             outdir / f"{outfilename}_{root_name}"
             if root_name
             else outdir / f"{outfilename}"
         )
+
         final_filename = str(
             pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
         )
-        hou.node(merge_sop.path()).geometry().saveToFile(final_filename)
-
-        # remove temp_subnet
-        merge_sop.destroy()
+        await Utils.wrapped_execute(action_query, export_obj, selected_object, final_filename)
 
         # export
         logger.info(f"Done export obj, output paths : {final_filename}")
