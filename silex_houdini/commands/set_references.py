@@ -24,7 +24,7 @@ class SetReferences(CommandBase):
     parameters = {
         "attributes": {
             "label": "Attributes",
-            "type": ListParameterMeta(AnyParameter),
+            "type": ListParameterMeta(ListParameterMeta(AnyParameter)),
             "value": None,
         },
         "values": {
@@ -34,7 +34,7 @@ class SetReferences(CommandBase):
         },
         "indexes": {
             "label": "Indexes",
-            "type": ListParameterMeta(int),
+            "type": ListParameterMeta(ListParameterMeta(int)),
             "value": None,
         },
     }
@@ -46,8 +46,8 @@ class SetReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        attributes: List[str] = parameters["attributes"]
-        indexes: List[int] = parameters["indexes"]
+        attributes: List[List[Any]] = parameters["attributes"]
+        indexes: List[List[int]] = parameters["indexes"]
 
         attribute_values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
@@ -58,51 +58,52 @@ class SetReferences(CommandBase):
 
         # Define the function that will repath all the references
         new_values = []
-        for attribute, index, values in zip(attributes, indexes, attribute_values):
-            value = values
-            if isinstance(values, list):
-                value = values[index]
+        for attribute_list, index_list, values in zip(attributes, indexes, attribute_values):
+            for attribute, index in zip(attribute_list, index_list):
+                value = values
+                if isinstance(values, list):
+                    value = values[index]
 
-            # Houdini need posix path
-            value = pathlib.Path(value).as_posix()
+                # Houdini need posix path
+                value = pathlib.Path(value).as_posix()
 
-            # If the attribute is an HDA
-            if isinstance(attribute, hou.HDADefinition):
-                logger.info("Installing HDA at path %s", value)
-                hou.hda.installFile(value, force_use_assets=True)
-                continue
+                # If the attribute is an HDA
+                if isinstance(attribute, hou.HDADefinition):
+                    logger.info("Installing HDA at path %s", value)
+                    hou.hda.installFile(value, force_use_assets=True)
+                    continue
 
-            # If the attribute if from an other referenced scene
-            if isinstance(attribute, hou.Parm) or isinstance(attribute, hou.ParmTuple):
-                if isinstance(values, list) and len(values) > 1:
-                    sequence = fileseq.findSequencesInList(values)[0]
-                    raw_value = attribute.rawValue()
+                # If the attribute if from an other referenced scene
+                if isinstance(attribute, hou.Parm) or isinstance(attribute, hou.ParmTuple):
+                    if isinstance(values, list) and len(values) > 1:
+                        sequence = fileseq.findSequencesInList(values)[0]
+                        raw_value = attribute.rawValue()
 
-                    REGEX_MAPPING = {r"\$[FTRN]": r"\W", r"\%.": r"\).", r"\<": r"\>."}
-                    for start_regex, end_regex in REGEX_MAPPING.items():
-                        index_start = list(re.finditer(start_regex, raw_value))
-                        if not index_start:
-                            continue
-                        index_start = index_start[-1].start()
-                        index_end = list(
-                            re.finditer(end_regex, raw_value[index_start + 1 :])
-                        )
-                        if not index_end:
-                            continue
-                        index_end = index_end[0].end()
+                        REGEX_MAPPING = {r"\$[FTRN]": r"\W", r"\%.": r"\).", r"\<": r"\>."}
+                        for start_regex, end_regex in REGEX_MAPPING.items():
+                            index_start = list(re.finditer(start_regex, raw_value))
+                            if not index_start:
+                                continue
+                            index_start = index_start[-1].start()
+                            index_end = list(
+                                re.finditer(end_regex, raw_value[index_start + 1 :])
+                            )
+                            if not index_end:
+                                continue
+                            index_end = index_end[0].end()
 
-                        index_expression = raw_value[
-                            index_start : index_start + index_end
-                        ]
-                        dirname = pathlib.Path(str(sequence.dirname()))
-                        basename = sequence.format(
-                            "{basename}" + str(index_expression) + "{extension}"
-                        )
-                        value = (dirname / basename).as_posix()
+                            index_expression = raw_value[
+                                index_start : index_start + index_end
+                            ]
+                            dirname = pathlib.Path(str(sequence.dirname()))
+                            basename = sequence.format(
+                                "{basename}" + str(index_expression) + "{extension}"
+                            )
+                            value = (dirname / basename).as_posix()
 
-                logger.info("Setting attribute %s to %s", attribute, value)
-                attribute.set(value)
+                    logger.info("Setting attribute %s to %s", attribute, value)
+                    attribute.set(value)
 
-            new_values.append(value)
+                new_values.append(value)
 
         return new_values

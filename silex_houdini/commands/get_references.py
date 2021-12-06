@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import pathlib
-import typing
 import fileseq
 import pathlib
 import logging
 import re
-from typing import Any, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
 
 import hou
 from silex_client.action.command_base import CommandBase
@@ -15,7 +14,7 @@ from silex_client.utils.parameter_types import TextParameterMeta
 from silex_houdini.utils.utils import Utils
 
 # Forward references
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
@@ -75,9 +74,9 @@ class GetReferences(CommandBase):
     ):
         referenced_files: List[
             Tuple[
-                Union[hou.Parm, hou.HDADefinition],
+                List[Union[hou.Parm, hou.HDADefinition]],
                 Union[List[pathlib.Path], pathlib.Path],
-                int,
+                List[int],
             ]
         ] = []
 
@@ -136,7 +135,7 @@ class GetReferences(CommandBase):
                     ]:
                         break
                     logger.info("Referenced HDA %s found at %s", file_path, definition)
-                    referenced_files.append((definition, file_path, index))
+                    referenced_files.append(([definition], file_path, [index]))
                 continue
 
             # Look for a file sequence
@@ -151,14 +150,25 @@ class GetReferences(CommandBase):
                     break
 
             # Append to the verified path
-            referenced_files.append((parameter, file_path, index))
+            referenced_files.append(([parameter], file_path, [index]))
             if sequence is None:
                 logger.info("Referenced file(s) %s found at %s", file_path, parameter)
             else:
                 logger.info("Referenced file(s) %s found at %s", sequence, parameter)
 
+        # Remove all the duplicates
+        filtered_references = []
+        for reference in referenced_files:
+            file_paths = [file[1] for file in filtered_references]
+            try:
+                index = file_paths.index(reference[1])
+                filtered_references[index][0].extend(reference[0])
+                filtered_references[index][2].extend(reference[2])
+            except ValueError:
+                filtered_references.append(reference)
+
         return {
-            "attributes": [file[0] for file in referenced_files],
-            "file_paths": [file[1] for file in referenced_files],
-            "indexes": [file[2] for file in referenced_files],
+            "attributes": [file[0] for file in filtered_references],
+            "file_paths": [file[1] for file in filtered_references],
+            "indexes": [file[2] for file in filtered_references],
         }
