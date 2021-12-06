@@ -6,6 +6,7 @@ import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_houdini.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -73,6 +74,45 @@ class ExportFBX(CommandBase):
         start_frame = parameters.get("frame_range")[0]
         end_frame = parameters.get("frame_range")[1]
 
+
+        def export_fbx(selected_object, final_filename, start_frame, end_frame):
+            # listname
+            selected_name = [item.name() for item in selected_object]
+
+            # create temp filmboxfbx
+            fbx_rop = hou.node("out").createNode("filmboxfbx")
+            fbx_rop.parm("sopoutput").set(final_filename)
+            fbx_rop.parm("createsubnetroot").set(0)
+
+            # create temp root node
+            temp_subnet = hou.node("obj").createNode("subnet")
+
+            # animation keys
+            fbx_rop.parm("trange").set(1)
+            fbx_rop.parmTuple("f").deleteAllKeyframes()  # Needed
+            fbx_rop.parmTuple("f").set((start_frame, end_frame, 0))
+
+            selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
+
+            hou.moveNodesTo(selected_object, temp_subnet)
+
+            # past temp_subnet in export fbx
+            fbx_rop.parm("startnode").set(temp_subnet.path())
+
+            # link node to object
+            fbx_rop.parm("execute").pressButton()
+
+            # remove fbx export
+            fbx_rop.destroy()
+
+            #reup node in temp_subnet into /obj
+            selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
+            hou.moveNodesTo(selected, hou.node("/obj/"))
+
+            #remove temp_subnet
+            temp_subnet.destroy()
+
+    
         # get current selection
         while len(hou.selectedNodes()) == 0:
             await self._prompt_label_parameter(
@@ -89,7 +129,7 @@ class ExportFBX(CommandBase):
         while len(time_dependents) > 0:
             await self._prompt_label_parameter(
                 action_query,
-                f"Animation cannot be made in SOP level for objects : {time_dependents}",
+                f"Animation cannot be made in SOP/Geometry level for objects : {time_dependents}",
             )
             time_dependents = [
                 node.name()
@@ -105,7 +145,6 @@ class ExportFBX(CommandBase):
             for item in hou.selectedNodes()
             if item.type().category().name() == "Object"
         ]
-        selected_name = [item.name() for item in selected_object]
 
         # create a temporary ROP node
         extension = await gazu.files.get_output_type_by_name("fbx")
@@ -124,37 +163,8 @@ class ExportFBX(CommandBase):
             start_frame = range_playbar.x()
             end_frame = range_playbar.y()
 
-        # create temp filmboxfbx
-        fbx_rop = hou.node("out").createNode("filmboxfbx")
-        fbx_rop.parm("sopoutput").set(final_filename)
-        fbx_rop.parm("createsubnetroot").set(0)
-
-        # create temp root node
-        temp_subnet = hou.node("obj").createNode("subnet")
-
-        # animation keys
-        fbx_rop.parm("trange").set(1)
-        fbx_rop.parmTuple("f").deleteAllKeyframes()  # Needed
-        fbx_rop.parmTuple("f").set((start_frame, end_frame, 0))
-
-        hou.moveNodesTo(selected_object, temp_subnet)
-
-        # past temp_subnet in export fbx
-        fbx_rop.parm("startnode").set(temp_subnet.path())
-
-        # link node to object
-        fbx_rop.parm("execute").pressButton()
-
-        # remove fbx export
-        fbx_rop.destroy()
-
-        # reup node in temp_subnet into /obj
-        selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
-        hou.moveNodesTo(selected, hou.node("/obj/"))
-
-        # remove temp_subnet
-        temp_subnet.destroy()
-
+        await Utils.wrapped_execute(action_query, export_fbx, selected_object, final_filename, start_frame, end_frame)
+        
         # export
         logger.info(f"Done export fbx, output paths : {final_filename}")
 
