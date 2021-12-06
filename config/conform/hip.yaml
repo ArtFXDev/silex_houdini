@@ -11,6 +11,11 @@ hip:
       label: "Conform Houdini scene's references"
       index: 20
       commands:
+        manual_mode:
+          label: "Set update mode to manual"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode: "Manual"
         open:
           label: "Open scene to conform"
           path: "silex_houdini.commands.open.Open"
