@@ -11,6 +11,11 @@ hip:
       label: "Conform Houdini scene's references"
       index: 20
       commands:
+        manual_mode:
+          label: "Set update mode to manual"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode: "Manual"
         open:
           label: "Open scene to conform"
           path: "silex_houdini.commands.open.Open"
@@ -42,6 +47,7 @@ hip:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
+            name: !command-output "input:input:file_paths"
             use_current_context: false
             create_temp_dir: false
             frame_set:
