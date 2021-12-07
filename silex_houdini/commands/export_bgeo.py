@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -31,21 +31,22 @@ class ExportBGEO(CommandBase):
         }
     }
 
-    async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
+    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
-        label_parameter = ParameterBuffer(
-            type=str,
-            name="label_parameter",
-            label="No nodes selected, please select Sop nodes and retry.",
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta(level),
+            name="Info",
+            label="Info",
+            value= f"Warning : {message}",
         )
-
         # Prompt the user with a label
-        label = await self.prompt_user(action_query, {"label": label_parameter})
-        return label["label"]
+        prompt = await self.prompt_user(action_query, {"info": info_parameter})
+
+        return prompt["info"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -87,17 +88,8 @@ class ExportBGEO(CommandBase):
         # get current selection
         selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
         while len(selected_object) == 0:
-            await self._prompt_label_parameter(action_query)
+            await self._prompt_info_parameter(action_query,  "No nodes selected,\n please select Sop nodes and retry.")
             selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]     
-
-        # get current selection
-        while len(selected_object) == 0:
-            await self._prompt_label_parameter(action_query)
-            selected_object = [
-                item
-                for item in hou.selectedNodes()
-                if item.type().category().name() == "Sop"
-            ]
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
