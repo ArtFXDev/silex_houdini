@@ -21,7 +21,8 @@ class Save(CommandBase):
     """
 
     parameters = {
-        "file_path": {"label": "filename", "type": str, "value": None, "hide": False}
+        "file_path": {"label": "filename", "type": str, "value": None, "hide": False},
+        "only_path": {"label": "Only set the path", "type": bool, "value": False, "hide": True},
     }
 
     @CommandBase.conform_command()
@@ -36,6 +37,9 @@ class Save(CommandBase):
         logger.info("Saving scene to %s", file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        await Utils.wrapped_execute(action_query, hou.hipFile.save, file_name=file_path)
+        if parameters["only_path"]:
+            await Utils.wrapped_execute(action_query, hou.hipFile.setName, file_name=file_path)
+        else:
+            await Utils.wrapped_execute(action_query, hou.hipFile.save, file_name=file_path)
 
         return {"new_path": file_path}
