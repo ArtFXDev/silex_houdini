@@ -5,6 +5,7 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_houdini.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -57,6 +58,32 @@ class ExportBGEO(CommandBase):
         start_frame = parameters.get("frame_range")[0]
         end_frame = parameters.get("frame_range")[1]
 
+        def export_bgeo(selected_object, final_filename, start_frame, end_frame):
+            merge_sop = hou.node(hou.node(selected_object[0]).parent().path()).createNode("merge")
+            for node in selected_object:
+                node = hou.node(node)
+                merge_sop.setNextInput(node)
+
+            # create rop output
+            rop_output = hou.node(merge_sop.parent().path())
+            rop_output = rop_output.createNode("rop_geometry")
+            rop_output.setInput(0, merge_sop)
+
+            # set frame range
+            rop_output.parm("trange").set(1)
+            rop_output.parmTuple("f").deleteAllKeyframes() # Needed
+            rop_output.parmTuple("f").set((start_frame, end_frame, 0))
+
+            # register final path
+            rop_output.parm("sopoutput").set(final_filename)
+
+            # execute
+            rop_output.parm("execute").pressButton()
+
+            # remove temp_subnet
+            merge_sop.destroy()
+            rop_output.destroy()
+
         # get current selection
         selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
         while len(selected_object) == 0:
@@ -74,42 +101,18 @@ class ExportBGEO(CommandBase):
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
+
         # Set frame range
         if used_timeline:
             range_playbar = hou.playbar.frameRange()
             start_frame = range_playbar.x()
             end_frame = range_playbar.y()
 
-        # create temp root node
-        merge_sop = hou.node(hou.node(selected_object[0]).parent().path()).createNode("merge")
-        for node in selected_object:
-            node = hou.node(node)
-            merge_sop.setNextInput(node)
-
-        # create rop output
-        rop_output = hou.node(merge_sop.parent().path())
-        rop_output = rop_output.createNode("rop_geometry")
-        rop_output.setInput(0, merge_sop)
-
-        # set frame range
-        rop_output.parm("trange").set(1)
-        rop_output.parmTuple("f").deleteAllKeyframes() # Needed
-        rop_output.parmTuple("f").set((start_frame, end_frame, 0))
-
         # compute final name
         extension = await gazu.files.get_output_type_by_name("bgeo")
         temp_outfilename = outdir / f"{outfilename}_{root_name}_$F4" if root_name else outdir / f"{outfilename}_$F4"
         final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
-
-        # register final path
-        rop_output.parm("sopoutput").set(final_filename)
-
-        # execute
-        rop_output.parm("execute").pressButton()
-
-        # remove temp_subnet
-        merge_sop.destroy()
-        rop_output.destroy()
+        await Utils.wrapped_execute(action_query, export_bgeo, selected_object, final_filename, start_frame, end_frame)
 
         logger.info(f"Done export obj, output paths : {outdir}")
         return str(outdir)
