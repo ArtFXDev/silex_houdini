@@ -43,14 +43,14 @@ class ExportABC(CommandBase):
         },
     }
 
-    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str) -> pathlib.Path:
+    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
         info_parameter = ParameterBuffer(
-            type=TextParameterMeta("warning"),
+            type=TextParameterMeta(level),
             name="Info",
             label="Info",
             value= f"Warning : {message}",
