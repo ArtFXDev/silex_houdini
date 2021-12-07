@@ -108,3 +108,10 @@ class ExportBGEO(CommandBase):
 
         logger.info(f"Done export obj, output paths : {outdir}")
         return str(outdir)
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")

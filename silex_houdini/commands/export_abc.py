@@ -136,3 +136,11 @@ class ExportABC(CommandBase):
         # export
         logger.info(f"Done export abc, output paths : {final_filename}")
         return final_filename
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
