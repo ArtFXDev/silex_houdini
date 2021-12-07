@@ -5,7 +5,7 @@ from typing import Any, Dict
 import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -42,22 +42,22 @@ class ExportFBX(CommandBase):
         },
     }
 
-    async def _prompt_label_parameter(
-        self, action_query: ActionQuery, message: str
-    ) -> pathlib.Path:
+    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
-        Helper to prompt the user a labelb
+        Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
-        label_parameter = ParameterBuffer(
-            type=str, name="label_parameter", label=f"{message}"
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta(level),
+            name="Info",
+            label="Info",
+            value= f"Warning : {message}",
         )
-
         # Prompt the user with a label
-        label = await self.prompt_user(action_query, {"label": label_parameter})
+        prompt = await self.prompt_user(action_query, {"info": info_parameter})
 
-        return label["label"]
+        return prompt["info"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -115,7 +115,7 @@ class ExportFBX(CommandBase):
     
         # get current selection
         while len(hou.selectedNodes()) == 0:
-            await self._prompt_label_parameter(
+            await self._prompt_info_parameter(
                 action_query, "No nodes selected, please select Object nodes and retry."
             )
 
@@ -127,7 +127,7 @@ class ExportFBX(CommandBase):
             and node.subnetOutputs()[0].isTimeDependent()
         ]
         while len(time_dependents) > 0:
-            await self._prompt_label_parameter(
+            await self._prompt_info_parameter(
                 action_query,
                 f"Animation cannot be made in SOP/Geometry level for objects : {time_dependents}",
             )
@@ -164,11 +164,19 @@ class ExportFBX(CommandBase):
             end_frame = range_playbar.y()
 
         await Utils.wrapped_execute(action_query, export_fbx, selected_object, final_filename, start_frame, end_frame)
-        
+
         # export
         logger.info(f"Done export fbx, output paths : {final_filename}")
 
         return final_filename
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
 
     @CommandBase.conform_command()
     async def __undo__(

@@ -5,7 +5,8 @@ from typing import Any, Dict
 import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
+
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -42,22 +43,22 @@ class ExportABC(CommandBase):
         },
     }
 
-    async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
+    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
-        label_parameter = ParameterBuffer(
-            type=str,
-            name="label_parameter",
-            label="No nodes selected, please select Object nodes and retry.",
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta(level),
+            name="Info",
+            label="Info",
+            value= f"Warning : {message}",
         )
-
         # Prompt the user with a label
-        label = await self.prompt_user(action_query, {"label": label_parameter})
+        prompt = await self.prompt_user(action_query, {"info": info_parameter})
 
-        return label["label"]
+        return prompt["info"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -96,9 +97,10 @@ class ExportABC(CommandBase):
             for item in hou.selectedNodes()
             if item.type().category().name() == "Object"
         ]
+
         # Test/update current selection
         while len(selected_object) == 0:
-            await self._prompt_label_parameter(action_query)
+            await self._prompt_info_parameter(action_query, "No nodes selected,\n please select Object nodes and retry.")
             selected_object = [
                 item.path()
                 for item in hou.selectedNodes()
@@ -134,3 +136,11 @@ class ExportABC(CommandBase):
         # export
         logger.info(f"Done export abc, output paths : {final_filename}")
         return final_filename
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
