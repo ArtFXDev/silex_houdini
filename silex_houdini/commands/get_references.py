@@ -5,6 +5,7 @@ import fileseq
 import pathlib
 import logging
 import re
+import os
 from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
 
 import hou
@@ -81,8 +82,9 @@ class GetReferences(CommandBase):
         ] = []
 
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
+        filtered_references = await self.filter_references(await scene_references)
 
-        for parameter, file_path in await scene_references:
+        for parameter, file_path in filtered_references:
             # Skip the references that are in a locked HDA
             if isinstance(parameter, hou.Parm):
                 is_locked_lamnda = lambda: parameter.node().isInsideLockedHDA()
@@ -172,3 +174,27 @@ class GetReferences(CommandBase):
             "file_paths": [file[1] for file in filtered_references],
             "indexes": [file[2] for file in filtered_references],
         }
+
+    async def filter_references(self, references):
+        filtered_references = []
+        for parameter, file_path in references:
+            # Skip invalid path
+            if not Utils.is_pathname_valid(file_path):
+                continue
+            
+            # Skip path relative
+            if not pathlib.Path(file_path).is_absolute():
+                continue
+
+            if isinstance(parameter, hou.Parm):
+                # Skip TOP nodes
+                if parameter.node.type().category().name() == "Top":
+                    continue
+
+                # Skip hidden/disabled nodes
+                if parameter.isDisabled() or parameter.isHidden():
+                    continue
+
+            filtered_references.append((parameter, file_path))
+
+        return filtered_references
