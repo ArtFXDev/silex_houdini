@@ -195,6 +195,10 @@ class GetReferences(CommandBase):
                 if parameter.isDisabled() or parameter.isHidden():
                     continue
 
+                # Skip channel references
+                if re.match(r"^`ch[^`]+\)`$", parameter.rawValue()) is not None:
+                    continue
+
             filtered_references.append((parameter, file_path))
 
         return filtered_references
