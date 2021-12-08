@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
 
 import hou
 
-from silex_client.utils.files import is_valid_pipeline_path
+from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
@@ -177,7 +177,7 @@ class GetReferences(CommandBase):
         filtered_references = []
         for parameter, file_path in references:
             # Skip invalid path
-            if not Utils.is_pathname_valid(file_path):
+            if not is_valid_path(file_path):
                 continue
             
             # Skip path relative
@@ -186,7 +186,7 @@ class GetReferences(CommandBase):
 
             if isinstance(parameter, hou.Parm):
                 # Skip TOP nodes
-                if parameter.node.type().category().name() == "Top":
+                if parameter.node().type().category().name() == "Top":
                     continue
 
                 # Skip hidden/disabled nodes
