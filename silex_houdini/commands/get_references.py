@@ -5,10 +5,11 @@ import fileseq
 import pathlib
 import logging
 import re
-import os
 from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
 
 import hou
+
+from silex_client.utils.files import is_valid_pipeline_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
@@ -115,10 +116,7 @@ class GetReferences(CommandBase):
 
             # Skip the references that are already conformed
             if parameters["skip_conformed"]:
-                if (
-                    re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent))
-                    is not None
-                ):
+                if (is_valid_pipeline_path(file_path)):
                     continue
 
             # Initialize the index to -1, which is the value if there is no sequences
