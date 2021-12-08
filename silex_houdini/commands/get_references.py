@@ -35,7 +35,7 @@ class GetReferences(CommandBase):
     }
 
     async def _prompt_new_path(
-            self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
+        self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
     ) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
@@ -45,7 +45,7 @@ class GetReferences(CommandBase):
             type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file {file_path} referenced in {parameter} could not be reached"
+            value=f"The file {file_path} referenced in {parameter} could not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
@@ -61,7 +61,11 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"info": info_parameter, "new_path": path_parameter, "skip": skip_parameter},
+            {
+                "info": info_parameter,
+                "new_path": path_parameter,
+                "skip": skip_parameter,
+            },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -93,13 +97,17 @@ class GetReferences(CommandBase):
                 if await is_locked:
                     continue
 
-            expanded_path = await Utils.wrapped_execute(action_query, hou.expandString, file_path)
+            expanded_path = await Utils.wrapped_execute(
+                action_query, hou.expandString, file_path
+            )
             file_path = pathlib.Path(await expanded_path)
             try:
                 # Make sure the file path leads to a reachable file
                 skip = False
                 while not file_path.exists() or not file_path.is_absolute():
-                    file_path, skip = await self._prompt_new_path(action_query, file_path, parameter)
+                    file_path, skip = await self._prompt_new_path(
+                        action_query, file_path, parameter
+                    )
                     if skip or file_path is None:
                         break
                 # The user can decide to skip the references that are not reachable
@@ -116,7 +124,7 @@ class GetReferences(CommandBase):
 
             # Skip the references that are already conformed
             if parameters["skip_conformed"]:
-                if (is_valid_pipeline_path(file_path)):
+                if is_valid_pipeline_path(file_path):
                     continue
 
             # Initialize the index to -1, which is the value if there is no sequences
@@ -128,7 +136,9 @@ class GetReferences(CommandBase):
                 ".hdanc",
                 ".hdalc",
             ]:
-                definitions = await Utils.wrapped_execute(action_query, hou.hda.definitionsInFile, file_path.as_posix())
+                definitions = await Utils.wrapped_execute(
+                    action_query, hou.hda.definitionsInFile, file_path.as_posix()
+                )
                 for definition in await definitions:
                     if file_path in [
                         referenced_file[1] for referenced_file in referenced_files
@@ -177,6 +187,8 @@ class GetReferences(CommandBase):
         filtered_references = []
         for parameter, file_path in references:
             if isinstance(parameter, hou.Parm):
+                node = parameter.node()
+
                 # Skip TOP network nodes
                 if parameter.node().type().category().name() == "TopNet":
                     continue
@@ -184,10 +196,17 @@ class GetReferences(CommandBase):
                 if parameter.node().type().category().name() == "Top":
                     continue
 
-                # Skip hidden/disabled nodes
+                # Skip hidden/disabled parameters
                 if parameter.isDisabled() or parameter.isHidden():
                     continue
 
+                # Skip hidden/disabled containing folders
+                folders = {p: p.parmTemplate() for p in node.parms() if isinstance(p.parmTemplate(), hou.FolderSetParmTemplate)}
+                for folder_name in parameter.containingFolders():
+                    for parameter, template in folders.items():
+                        if folder_name in template.folderNames() and (parameter.isDisabled() or parameter.isHidden()):
+                            continue
+                    
                 # Skip channel references
                 if re.match(r"^`ch[^`]+\)`$", parameter.rawValue()) is not None:
                     continue
@@ -197,7 +216,7 @@ class GetReferences(CommandBase):
             # Skip invalid path
             if not is_valid_path(file_path):
                 continue
-            
+
             # Skip path relative
             if not pathlib.Path(file_path).is_absolute():
                 continue
