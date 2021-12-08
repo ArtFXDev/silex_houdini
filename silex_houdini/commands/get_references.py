@@ -176,15 +176,10 @@ class GetReferences(CommandBase):
     async def filter_references(self, references):
         filtered_references = []
         for parameter, file_path in references:
-            # Skip invalid path
-            if not is_valid_path(file_path):
-                continue
-            
-            # Skip path relative
-            if not pathlib.Path(file_path).is_absolute():
-                continue
-
             if isinstance(parameter, hou.Parm):
+                # Skip TOP network nodes
+                if parameter.node().type().category().name() == "TopNet":
+                    continue
                 # Skip TOP nodes
                 if parameter.node().type().category().name() == "Top":
                     continue
@@ -196,6 +191,16 @@ class GetReferences(CommandBase):
                 # Skip channel references
                 if re.match(r"^`ch[^`]+\)`$", parameter.rawValue()) is not None:
                     continue
+
+                file_path = parameter.eval()
+
+            # Skip invalid path
+            if not is_valid_path(file_path):
+                continue
+            
+            # Skip path relative
+            if not pathlib.Path(file_path).is_absolute():
+                continue
 
             filtered_references.append((parameter, file_path))
 
