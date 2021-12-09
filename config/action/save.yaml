@@ -1,5 +1,6 @@
 save:
   hide: true
+  thumbnail: "$SILEX_ICONS/save.svg"
   steps:
     save:
       label: "Save"

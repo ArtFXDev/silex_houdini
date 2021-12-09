@@ -1,3 +1,4 @@
+from silex_client.resolve.config import Config
 from silex_client.action.action_query import ActionQuery
 import hou
 

@@ -22,6 +22,7 @@ def commands():
     env.PYTHONPATH.append("{root}")
     env.HOUDINI_PATH.append("{root}/startup")
     env.PYTHONPATH.append("{root}/startup/scripts")
+    env.SILEX_ICONS = "{root}/startup/icons"
 
 
 @late()
