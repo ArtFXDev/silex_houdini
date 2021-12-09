@@ -88,7 +88,7 @@ class ExportBGEO(CommandBase):
         # get current selection
         selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
         while len(selected_object) == 0:
-            await self._prompt_info_parameter(action_query,  "No nodes selected,\n please select Sop nodes and retry.")
+            await self._prompt_info_parameter(action_query,  "No nodes selected,\n please select Sop nodes and continue.")
             selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]     
 
         # Test output path exist

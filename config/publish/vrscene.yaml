@@ -67,4 +67,4 @@ vrscene:
           label: "Set update mode to its original value"
           path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
           parameters:
-            mode: !command-output "quality_check:manual_mode:previous_mode"
+            mode: !command-output "check_references:manual_mode:previous_mode"

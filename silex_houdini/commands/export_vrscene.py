@@ -80,7 +80,7 @@ class ExportVrscene(CommandBase):
             if item.type().name() == "vray_renderer"
         ]
         while len(selected_object) != 1:
-            await self._prompt_info_parameter(action_query, "Invalid nodes selected,\n Please select V-Ray ROP nodes and retry.")
+            await self._prompt_info_parameter(action_query, "Invalid nodes selected,\n Please select V-Ray ROP nodes and continue.")
             selected_object = [
                 item
                 for item in hou.selectedNodes()
