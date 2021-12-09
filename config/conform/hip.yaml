@@ -70,7 +70,7 @@ hip:
           path: "silex_houdini.commands.clear_hdas.ClearHDAs"
           tooltip: "Uninstall the HDA definitions that where repathed"
         save:
-          label: "Save the maya scene to the right location"
+          label: "Save the houdini scene to the right location"
           path: "silex_houdini.commands.save.Save"
           parameters:
             file_path: !command-output "conform_scene:build_output_path:full_path"
@@ -80,6 +80,11 @@ hip:
           parameters:
             file_path: !command-output "conform_references:open:old_path"
             save: False
+        previous_mode:
+          label: "Set update mode to its original value"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode: !command-output "conform_references:manual_mode:previous_mode"
 
     output:
       index: 40
