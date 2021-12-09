@@ -3,6 +3,7 @@ import typing
 from typing import Any, Dict
 import logging
 
+from silex_houdini.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import SelectParameterMeta
 
@@ -44,4 +45,17 @@ class SetUpdateMode(CommandBase):
         logger.info(
             "Setting the update mode to %s", update_mode_mapping.get(mode, "Auto")
         )
-        hou.setUpdateMode(update_mode_mapping.get(mode, "Auto"))
+        current_mode = await Utils.wrapped_execute(action_query, hou.updateModeSetting)
+        current_mode = await current_mode
+        new_mode = update_mode_mapping.get(mode, "Auto")
+        await Utils.wrapped_execute(action_query, hou.setUpdateMode, new_mode)
+
+        previous_mode_key = next(key for key, value in update_mode_mapping.items() if value == current_mode)
+        new_mode_key = next(key for key, value in update_mode_mapping.items() if value == new_mode)
+        return {
+            "previous_mode": previous_mode_key,
+            "new_mode": new_mode_key,
+        }
+        
+
+

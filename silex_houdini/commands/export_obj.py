@@ -81,7 +81,7 @@ class ExportOBJ(CommandBase):
 
         # get current selection
         while len(selected_object) == 0:
-            await self._prompt_info_parameter(action_query, "No nodes selected,\n please select Sop nodes and retry.")
+            await self._prompt_info_parameter(action_query, "No nodes selected,\n please select Sop nodes and continue.")
             selected_object = [
                 item
                 for item in hou.selectedNodes()

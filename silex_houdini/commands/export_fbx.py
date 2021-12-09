@@ -116,7 +116,7 @@ class ExportFBX(CommandBase):
         # get current selection
         while len(hou.selectedNodes()) == 0:
             await self._prompt_info_parameter(
-                action_query, "No nodes selected, please select Object nodes and retry."
+                action_query, "No nodes selected, please select Object nodes and continue."
             )
 
         # get time dependent nodes

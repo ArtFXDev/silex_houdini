@@ -4,10 +4,12 @@ import pathlib
 import fileseq
 import pathlib
 import logging
-import re
+import os
 from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
 
 import hou
+
+from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
@@ -33,7 +35,7 @@ class GetReferences(CommandBase):
     }
 
     async def _prompt_new_path(
-            self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
+        self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
     ) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
@@ -43,7 +45,7 @@ class GetReferences(CommandBase):
             type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file {file_path} referenced in {parameter} could not be reached"
+            value=f"The file {file_path} referenced in {parameter} could not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
@@ -59,7 +61,11 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"info": info_parameter, "new_path": path_parameter, "skip": skip_parameter},
+            {
+                "info": info_parameter,
+                "new_path": path_parameter,
+                "skip": skip_parameter,
+            },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -81,8 +87,9 @@ class GetReferences(CommandBase):
         ] = []
 
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
+        filtered_references = await self.filter_references(await scene_references)
 
-        for parameter, file_path in await scene_references:
+        for parameter, file_path in filtered_references:
             # Skip the references that are in a locked HDA
             if isinstance(parameter, hou.Parm):
                 is_locked_lamnda = lambda: parameter.node().isInsideLockedHDA()
@@ -90,13 +97,17 @@ class GetReferences(CommandBase):
                 if await is_locked:
                     continue
 
-            expanded_path = await Utils.wrapped_execute(action_query, hou.expandString, file_path)
+            expanded_path = await Utils.wrapped_execute(
+                action_query, hou.expandString, file_path
+            )
             file_path = pathlib.Path(await expanded_path)
             try:
                 # Make sure the file path leads to a reachable file
                 skip = False
                 while not file_path.exists() or not file_path.is_absolute():
-                    file_path, skip = await self._prompt_new_path(action_query, file_path, parameter)
+                    file_path, skip = await self._prompt_new_path(
+                        action_query, file_path, parameter
+                    )
                     if skip or file_path is None:
                         break
                 # The user can decide to skip the references that are not reachable
@@ -113,10 +124,7 @@ class GetReferences(CommandBase):
 
             # Skip the references that are already conformed
             if parameters["skip_conformed"]:
-                if (
-                    re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent))
-                    is not None
-                ):
+                if is_valid_pipeline_path(file_path):
                     continue
 
             # Initialize the index to -1, which is the value if there is no sequences
@@ -128,7 +136,9 @@ class GetReferences(CommandBase):
                 ".hdanc",
                 ".hdalc",
             ]:
-                definitions = await Utils.wrapped_execute(action_query, hou.hda.definitionsInFile, file_path.as_posix())
+                definitions = await Utils.wrapped_execute(
+                    action_query, hou.hda.definitionsInFile, file_path.as_posix()
+                )
                 for definition in await definitions:
                     if file_path in [
                         referenced_file[1] for referenced_file in referenced_files
@@ -167,8 +177,88 @@ class GetReferences(CommandBase):
             except ValueError:
                 filtered_references.append(reference)
 
+        # Display a message to the user to inform about all the references to conform
+        referenced_file_paths = [
+            fileseq.findSequencesInList(reference[1])
+            if isinstance(reference[1], list)
+            else [reference[1]]
+            for reference in filtered_references
+        ]
+        message = f"The scene\n{hou.hipFile.path()}\nis referencing non conformed file(s) :\n\n"
+        for file_path in referenced_file_paths:
+            message += f"- {' '.join([str(f) for f in file_path])}\n"
+
+        message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta("warning"),
+            name=f"info_{index}",
+            label=f"Info",
+            value=message,
+        )
+        # Send the message to the user
+        if referenced_file_paths:
+            await self.prompt_user(action_query, {"info": info_parameter})
+
         return {
             "attributes": [file[0] for file in filtered_references],
             "file_paths": [file[1] for file in filtered_references],
             "indexes": [file[2] for file in filtered_references],
         }
+
+    async def filter_references(self, references):
+        filtered_references = []
+        for parameter, file_path in references:
+            if isinstance(parameter, hou.Parm):
+                node = parameter.node()
+
+                # Skip TOP network nodes
+                if parameter.node().type().category().name() == "TopNet":
+                    continue
+                # Skip TOP nodes
+                if parameter.node().type().category().name() == "Top":
+                    continue
+
+                # Skip hidden/disabled parameters
+                if parameter.isDisabled() or parameter.isHidden():
+                    continue
+
+                # Skip hidden/disabled containing folders
+                folders = {
+                    p: p.parmTemplate()
+                    for p in node.parms()
+                    if isinstance(p.parmTemplate(), hou.FolderSetParmTemplate)
+                }
+                for folder_name in parameter.containingFolders():
+                    for parameter, template in folders.items():
+                        if folder_name in template.folderNames() and (
+                            parameter.isDisabled() or parameter.isHidden()
+                        ):
+                            continue
+
+                # Skip channel references
+                if parameter.getReferencedParm() != parameter:
+                    continue
+
+                file_path = parameter.eval()
+
+            # Skip invalid path
+            if not is_valid_path(file_path):
+                continue
+
+            # Skip path relative
+            if not pathlib.Path(file_path).is_absolute():
+                continue
+
+            # Skip path relative to HOUDINI_PATH
+            houdini_path_relative = False
+            for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
+                if not os.path.exists(houdini_path):
+                    continue
+                if str(pathlib.Path(houdini_path)) in str(pathlib.Path(file_path)):
+                    houdini_path_relative = True
+            if houdini_path_relative:
+                continue
+
+            filtered_references.append((parameter, file_path))
+
+        return filtered_references
