@@ -184,7 +184,7 @@ class GetReferences(CommandBase):
             else [reference[1]]
             for reference in filtered_references
         ]
-        message = "Your scene is referencing non conformed file(s) :\n\n"
+        message = f"The scene\n{hou.hipFile.path()}\nis referencing non conformed file(s) :\n\n"
         for file_path in referenced_file_paths:
             message += f"- {' '.join([str(f) for f in file_path])}\n"
 
