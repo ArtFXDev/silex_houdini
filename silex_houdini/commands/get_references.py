@@ -208,7 +208,7 @@ class GetReferences(CommandBase):
                             continue
                     
                 # Skip channel references
-                if parameter.getReferencedParm() == parameter:
+                if parameter.getReferencedParm() != parameter:
                     continue
 
                 file_path = parameter.eval()
@@ -222,9 +222,12 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip path relative to HOUDINI_PATH
+            houdini_path_relative = False
             for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
                 if str(pathlib.Path(houdini_path)) in str(pathlib.Path(file_path)):
-                    continue
+                    houdini_path_relative = True
+            if houdini_path_relative:
+                continue
 
             filtered_references.append((parameter, file_path))
 
