@@ -4,7 +4,7 @@ import pathlib
 import fileseq
 import pathlib
 import logging
-import re
+import os
 from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
 
 import hou
@@ -220,6 +220,11 @@ class GetReferences(CommandBase):
             # Skip path relative
             if not pathlib.Path(file_path).is_absolute():
                 continue
+
+            # Skip path relative to HOUDINI_PATH
+            for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
+                if str(pathlib.Path(houdini_path)) in str(pathlib.Path(file_path)):
+                    continue
 
             filtered_references.append((parameter, file_path))
 
