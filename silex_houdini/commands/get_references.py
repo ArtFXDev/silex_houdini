@@ -177,6 +177,28 @@ class GetReferences(CommandBase):
             except ValueError:
                 filtered_references.append(reference)
 
+        # Display a message to the user to inform about all the references to conform
+        referenced_file_paths = [
+            fileseq.findSequencesInList(reference[1])
+            if isinstance(reference[1], list)
+            else [reference[1]]
+            for reference in filtered_references
+        ]
+        message = "Your scene is referencing non conformed file(s) :\n\n"
+        for file_path in referenced_file_paths:
+            message += f"- {' '.join([str(f) for f in file_path])}\n"
+
+        message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta("warning"),
+            name=f"info_{index}",
+            label=f"Info",
+            value=message,
+        )
+        # Send the message to the user
+        if referenced_file_paths:
+            await self.prompt_user(action_query, {"info": info_parameter})
+
         return {
             "attributes": [file[0] for file in filtered_references],
             "file_paths": [file[1] for file in filtered_references],
@@ -201,12 +223,18 @@ class GetReferences(CommandBase):
                     continue
 
                 # Skip hidden/disabled containing folders
-                folders = {p: p.parmTemplate() for p in node.parms() if isinstance(p.parmTemplate(), hou.FolderSetParmTemplate)}
+                folders = {
+                    p: p.parmTemplate()
+                    for p in node.parms()
+                    if isinstance(p.parmTemplate(), hou.FolderSetParmTemplate)
+                }
                 for folder_name in parameter.containingFolders():
                     for parameter, template in folders.items():
-                        if folder_name in template.folderNames() and (parameter.isDisabled() or parameter.isHidden()):
+                        if folder_name in template.folderNames() and (
+                            parameter.isDisabled() or parameter.isHidden()
+                        ):
                             continue
-                    
+
                 # Skip channel references
                 if parameter.getReferencedParm() != parameter:
                     continue
