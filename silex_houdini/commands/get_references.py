@@ -208,7 +208,7 @@ class GetReferences(CommandBase):
                             continue
                     
                 # Skip channel references
-                if re.match(r"^`ch[^`]+\)`$", parameter.rawValue()) is not None:
+                if parameter.getReferencedParm() == parameter:
                     continue
 
                 file_path = parameter.eval()

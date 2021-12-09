@@ -1,8 +1,5 @@
-from silex_client.core.context import Context
-from silex_client.resolve.config import Config
 from silex_client.action.action_query import ActionQuery
 import hou
-import os
 
 
 def create_shelf():
