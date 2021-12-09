@@ -224,6 +224,8 @@ class GetReferences(CommandBase):
             # Skip path relative to HOUDINI_PATH
             houdini_path_relative = False
             for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
+                if not os.path.exists(houdini_path):
+                    continue
                 if str(pathlib.Path(houdini_path)) in str(pathlib.Path(file_path)):
                     houdini_path_relative = True
             if houdini_path_relative:
