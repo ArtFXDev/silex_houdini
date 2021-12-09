@@ -191,8 +191,8 @@ class GetReferences(CommandBase):
         message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
         info_parameter = ParameterBuffer(
             type=TextParameterMeta("warning"),
-            name=f"info_{index}",
-            label=f"Info",
+            name="info",
+            label="Info",
             value=message,
         )
         # Send the message to the user
