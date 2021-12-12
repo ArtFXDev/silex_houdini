@@ -21,7 +21,13 @@ if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-References = List[Tuple[List[Union[hou.Parm, hou.HDADefinition]], Union[List[pathlib.Path], pathlib.Path]]]
+References = List[
+    Tuple[
+        List[Union[hou.Parm, hou.HDADefinition]],
+        Union[List[pathlib.Path], pathlib.Path],
+    ]
+]
+
 
 class GetReferences(CommandBase):
     """
@@ -39,8 +45,8 @@ class GetReferences(CommandBase):
             "label": "Custom filters",
             "type": ListParameterMeta(str),
             "value": [],
-            "tooltip": "List of file extensions to ignore"
-        }
+            "tooltip": "List of file extensions to ignore",
+        },
     }
 
     async def _prompt_new_path(
@@ -80,8 +86,12 @@ class GetReferences(CommandBase):
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"]
 
-
-    async def _filter_references(self, references: List[Tuple[Any, pathlib.Path]], skipped_extensions: List[str] = [], skip_conformed = True):
+    async def _filter_references(
+        self,
+        references: List[Tuple[Any, pathlib.Path]],
+        skipped_extensions: List[str] = [],
+        skip_conformed=True,
+    ):
         """
         Filter out all the references that we don't care about
         """
@@ -103,12 +113,12 @@ class GetReferences(CommandBase):
                 if node().type().category().name() == "Top":
                     continue
 
-                # Skip hidden/disabled parameters
-                if parameter.isDisabled() or parameter.isHidden():
-                    continue
-
                 # Skip channel references
                 if parameter.getReferencedParm() != parameter:
+                    continue
+
+                # Skip hidden/disabled parameters
+                if parameter.isDisabled() or parameter.isHidden():
                     continue
 
                 # Skip hidden/disabled containing folders
@@ -137,7 +147,7 @@ class GetReferences(CommandBase):
 
             # Skip the references that are already conformed
             if skip_conformed and is_valid_pipeline_path(file_path):
-                    continue
+                continue
 
             # Skip path relative to HOUDINI_PATH
             houdini_path_relative = False
@@ -157,7 +167,6 @@ class GetReferences(CommandBase):
 
         return filtered_references
 
-    
     def _merge_duplicates(self, references: References):
         """
         Merge the files referenced multiple times into one item in the list of references
@@ -185,11 +194,16 @@ class GetReferences(CommandBase):
 
         # Get all the references of the scene
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
+        filtered_scene_references = await self._filter_references(
+            await scene_references, parameters["filters"], parameters["skip_conformed"]
+        )
 
         # Loop over all the filtered references
-        for parameter, file_path in await self._filter_references(await scene_references, parameters["filters"], parameters["skip_conformed"]):
+        for parameter, file_path in filtered_scene_references:
             # Get the real path
-            expanded_path = await Utils.wrapped_execute(action_query, hou.expandString, file_path)
+            expanded_path = await Utils.wrapped_execute(
+                action_query, hou.expandString, file_path
+            )
             file_path = pathlib.Path(await expanded_path)
 
             # Make sure the file path leads to a reachable file
