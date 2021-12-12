@@ -91,26 +91,30 @@ class GetReferences(CommandBase):
         references: List[Tuple[Any, pathlib.Path]],
         skipped_extensions: List[str] = [],
         skip_conformed=True,
-    ):
+    ) -> List[Tuple[Any, pathlib.Path]]:
         """
         Filter out all the references that we don't care about
         """
         filtered_references = []
 
         for parameter, file_path in references:
+            file_path = pathlib.Path(str(file_path))
+            if str(file_path) != r"C:\Users\Simon\Pictures\img.png":
+                continue
+
             if isinstance(parameter, hou.Parm):
                 # Get the node the parameter belongs to
                 node = parameter.node()
 
                 # Skip the references that are in a locked HDA
-                if node().isInsideLockedHDA():
+                if node.isInsideLockedHDA():
                     continue
 
                 # Skip TOP network nodes
-                if node().type().category().name() == "TopNet":
+                if node.type().category().name() == "TopNet":
                     continue
                 # Skip TOP nodes
-                if node().type().category().name() == "Top":
+                if node.type().category().name() == "Top":
                     continue
 
                 # Skip channel references
@@ -128,21 +132,21 @@ class GetReferences(CommandBase):
                     if isinstance(p.parmTemplate(), hou.FolderSetParmTemplate)
                 }
                 for folder_name in parameter.containingFolders():
-                    for parameter, template in folders.items():
+                    for node_parameter, template in folders.items():
                         if folder_name in template.folderNames() and (
-                            parameter.isDisabled() or parameter.isHidden()
+                            node_parameter.isDisabled() or node_parameter.isHidden()
                         ):
                             continue
 
                 # Get the real path
-                file_path = parameter.eval()
+                file_path = pathlib.Path(str(parameter.eval()))
 
             # Skip invalid path
             if not is_valid_path(str(file_path)):
                 continue
 
             # Skip path relative
-            if not pathlib.Path(file_path).is_absolute():
+            if not file_path.is_absolute():
                 continue
 
             # Skip the references that are already conformed
@@ -154,20 +158,20 @@ class GetReferences(CommandBase):
             for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
                 if not os.path.exists(houdini_path):
                     continue
-                if str(pathlib.Path(houdini_path)) in str(pathlib.Path(file_path)):
+                if str(pathlib.Path(houdini_path)) in str(file_path):
                     houdini_path_relative = True
             if houdini_path_relative:
                 continue
 
             # Skip the custom extensions provided
-            if pathlib.Path(file_path).suffix in skipped_extensions:
+            if "".join(pathlib.Path(file_path).suffixes) in skipped_extensions:
                 continue
 
             filtered_references.append((parameter, file_path))
 
         return filtered_references
 
-    def _merge_duplicates(self, references: References):
+    def _merge_duplicates(self, references: References) -> References:
         """
         Merge the files referenced multiple times into one item in the list of references
         """
@@ -202,7 +206,7 @@ class GetReferences(CommandBase):
         for parameter, file_path in filtered_scene_references:
             # Get the real path
             expanded_path = await Utils.wrapped_execute(
-                action_query, hou.expandString, file_path
+                action_query, hou.expandString, str(file_path)
             )
             file_path = pathlib.Path(await expanded_path)
 

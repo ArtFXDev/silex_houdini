@@ -32,11 +32,6 @@ class SetReferences(CommandBase):
             "type": ListParameterMeta(AnyParameter),
             "value": None,
         },
-        "indexes": {
-            "label": "Indexes",
-            "type": ListParameterMeta(ListParameterMeta(int)),
-            "value": None,
-        },
     }
 
     @CommandBase.conform_command()
@@ -47,7 +42,6 @@ class SetReferences(CommandBase):
         logger: logging.Logger,
     ):
         attributes: List[List[Any]] = parameters["attributes"]
-        indexes: List[List[int]] = parameters["indexes"]
 
         attribute_values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
@@ -58,11 +52,11 @@ class SetReferences(CommandBase):
 
         # Define the function that will repath all the references
         new_values = []
-        for attribute_list, index_list, values in zip(attributes, indexes, attribute_values):
-            for attribute, index in zip(attribute_list, index_list):
+        for attribute_list, values in zip(attributes, attribute_values):
+            for attribute in attribute_list:
                 value = values
                 if isinstance(values, list):
-                    value = values[index]
+                    value = values[0]
                 else:
                     value = values
 
@@ -76,7 +70,9 @@ class SetReferences(CommandBase):
                     continue
 
                 # If the attribute if from an other referenced scene
-                if isinstance(attribute, hou.Parm) or isinstance(attribute, hou.ParmTuple):
+                if isinstance(attribute, hou.Parm) or isinstance(
+                    attribute, hou.ParmTuple
+                ):
                     value = self.set_parameter(value, values, attribute)
                     logger.info("Setting attribute %s to %s", attribute, value)
 
@@ -95,16 +91,12 @@ class SetReferences(CommandBase):
                 if not index_start:
                     continue
                 index_start = index_start[-1].start()
-                index_end = list(
-                    re.finditer(end_regex, raw_value[index_start + 1 :])
-                )
+                index_end = list(re.finditer(end_regex, raw_value[index_start + 1 :]))
                 if not index_end:
                     continue
                 index_end = index_end[0].end()
 
-                index_expression = raw_value[
-                    index_start : index_start + index_end
-                ]
+                index_expression = raw_value[index_start : index_start + index_end]
                 dirname = pathlib.Path(str(sequence.dirname()))
                 basename = sequence.format(
                     "{basename}" + str(index_expression) + "{extension}"
@@ -113,4 +105,3 @@ class SetReferences(CommandBase):
 
         attribute.set(value)
         return value
-

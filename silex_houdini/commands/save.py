@@ -50,8 +50,9 @@ class Save(CommandBase):
             hou.licenseCategoryType.Indie: ".hiplc",
             hou.licenseCategoryType.Commercial: ".hip",
         }
-        file_path = os.path.splitext(file_path)[0] + extension_mapping.get(
-            hou.licenseCategory(), ".hip"
+        file_path = pathlib.Path(
+            os.path.splitext(file_path)[0]
+            + extension_mapping.get(hou.licenseCategory(), ".hip")
         )
 
         await Utils.wrapped_execute(
