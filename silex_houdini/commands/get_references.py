@@ -13,7 +13,7 @@ import hou
 from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta
+from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -34,6 +34,12 @@ class GetReferences(CommandBase):
             "type": bool,
             "value": True,
             "tooltip": "The references that point to a file that is already in the right folder will be skipped",
+        },
+        "filters": {
+            "label": "Custom filters",
+            "type": ListParameterMeta(str),
+            "value": [],
+            "tooltip": "List of file extensions to ignore"
         }
     }
 
@@ -75,7 +81,7 @@ class GetReferences(CommandBase):
         return response["new_path"], response["skip"]
 
 
-    async def _filter_references(self, references: List[Tuple[Any, patlib.Path]], skip_conformed = True):
+    async def _filter_references(self, references: List[Tuple[Any, pathlib.Path]], skipped_extensions: List[str] = [], skip_conformed = True):
         """
         Filter out all the references that we don't care about
         """
@@ -122,7 +128,7 @@ class GetReferences(CommandBase):
                 file_path = parameter.eval()
 
             # Skip invalid path
-            if not is_valid_path(file_path):
+            if not is_valid_path(str(file_path)):
                 continue
 
             # Skip path relative
@@ -141,6 +147,10 @@ class GetReferences(CommandBase):
                 if str(pathlib.Path(houdini_path)) in str(pathlib.Path(file_path)):
                     houdini_path_relative = True
             if houdini_path_relative:
+                continue
+
+            # Skip the custom extensions provided
+            if pathlib.Path(file_path).suffix in skipped_extensions:
                 continue
 
             filtered_references.append((parameter, file_path))
@@ -177,7 +187,7 @@ class GetReferences(CommandBase):
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
 
         # Loop over all the filtered references
-        for parameter, file_path in await self._filter_references(await scene_references, parameters["skip_conformed"]):
+        for parameter, file_path in await self._filter_references(await scene_references, parameters["filters"], parameters["skip_conformed"]):
             # Get the real path
             expanded_path = await Utils.wrapped_execute(action_query, hou.expandString, file_path)
             file_path = pathlib.Path(await expanded_path)
