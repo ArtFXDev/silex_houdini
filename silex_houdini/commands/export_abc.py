@@ -24,12 +24,6 @@ class ExportABC(CommandBase):
     parameters = {
         "file_dir": {"label": "Out directory", "type": pathlib.Path},
         "file_name": {"label": "Out filename", "type": pathlib.Path},
-        "root_name": {
-            "label": "Out Object Name",
-            "type": str,
-            "value": "",
-            "hide": False,
-        },
         "timeline_as_framerange": {
             "label": "Use timeline as frame-range",
             "type": bool,
@@ -69,12 +63,11 @@ class ExportABC(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        outdir = parameters.get("file_dir")
-        outfilename = parameters.get("file_name")
-        root_name = parameters.get("root_name")
-        used_timeline = parameters.get("timeline_as_framerange")
-        start_frame = parameters.get("frame_range")[0]
-        end_frame = parameters.get("frame_range")[1]
+        outdir = parameters["file_dir"]
+        outfilename = parameters["file_name"]
+        used_timeline = parameters["timeline_as_framerange"]
+        start_frame = parameters["frame_range"][0]
+        end_frame = parameters["frame_range"][1]
 
         def export_abc(selected_object, final_filename, start_frame, end_frame):
             # create a temporary ROP node
@@ -120,11 +113,7 @@ class ExportABC(CommandBase):
 
         # compute final path
         extension = await gazu.files.get_output_type_by_name("abc")
-        temp_outfilename = (
-            outdir / f"{outfilename}_{root_name}"
-            if root_name
-            else outdir / f"{outfilename}"
-        )
+        temp_outfilename = outdir / f"{outfilename}"
 
         final_filename = str(
             pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
