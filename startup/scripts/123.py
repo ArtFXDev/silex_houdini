@@ -7,8 +7,9 @@ from silex_client.core.context import Context
 from create_shelf import create_shelf
 from silex_client.action.action_query import ActionQuery
 
-Context.get().start_services()
-create_shelf()
+if hou.isUIAvailable():
+    Context.get().start_services()
+    create_shelf()
 
 # Add a shortcut for increment and save
 if hou.isUIAvailable():
