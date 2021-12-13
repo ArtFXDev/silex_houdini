@@ -31,7 +31,7 @@ class ExportABC(CommandBase):
             "hide": False,
         },
         "timeline_as_framerange": {
-            "label": "Take framerange frame-range?",
+            "label": "Use timeline as frame-range",
             "type": bool,
             "value": False,
             "hide": False,

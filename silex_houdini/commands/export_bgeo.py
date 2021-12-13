@@ -23,7 +23,7 @@ class ExportBGEO(CommandBase):
     parameters = {
         "file_dir": { "label": "Out directory", "type": pathlib.Path, "value": "" },
         "file_name": { "label": "Out filename", "type": pathlib.Path, "value": "" },
-        "timeline_as_framerange": { "label": "Take framerange frame-range?", "type": bool, "value": False, "hide": False },
+        "timeline_as_framerange": { "label": "Use timeline as frame-range", "type": bool, "value": False, "hide": False },
         "frame_range": {
             "label": "Frame Range",
             "type": IntArrayParameterMeta(2),
