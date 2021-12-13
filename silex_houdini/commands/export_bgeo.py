@@ -21,17 +21,24 @@ import logging
 class ExportBGEO(CommandBase):
 
     parameters = {
-        "file_dir": { "label": "Out directory", "type": pathlib.Path, "value": "" },
-        "file_name": { "label": "Out filename", "type": pathlib.Path, "value": "" },
-        "timeline_as_framerange": { "label": "Use timeline as frame-range", "type": bool, "value": False, "hide": False },
+        "file_dir": {"label": "Out directory", "type": pathlib.Path, "value": ""},
+        "file_name": {"label": "Out filename", "type": pathlib.Path, "value": ""},
+        "timeline_as_framerange": {
+            "label": "Use timeline as frame-range",
+            "type": bool,
+            "value": False,
+            "hide": False,
+        },
         "frame_range": {
             "label": "Frame Range",
             "type": IntArrayParameterMeta(2),
-            "value": [0, 0]
-        }
+            "value": [0, 0],
+        },
     }
 
-    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
+    async def _prompt_info_parameter(
+        self, action_query: ActionQuery, message: str, level: str = "warning"
+    ) -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
@@ -41,7 +48,7 @@ class ExportBGEO(CommandBase):
             type=TextParameterMeta(level),
             name="Info",
             label="Info",
-            value= f"Warning : {message}",
+            value=f"Warning : {message}",
         )
         # Prompt the user with a label
         prompt = await self.prompt_user(action_query, {"info": info_parameter})
@@ -50,7 +57,10 @@ class ExportBGEO(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         outdir = parameters.get("file_dir")
         outfilename = parameters.get("file_name")
@@ -60,7 +70,9 @@ class ExportBGEO(CommandBase):
         end_frame = parameters.get("frame_range")[1]
 
         def export_bgeo(selected_object, final_filename, start_frame, end_frame):
-            merge_sop = hou.node(hou.node(selected_object[0]).parent().path()).createNode("merge")
+            merge_sop = hou.node(
+                hou.node(selected_object[0]).parent().path()
+            ).createNode("merge")
             for node in selected_object:
                 node = hou.node(node)
                 merge_sop.setNextInput(node)
@@ -72,7 +84,7 @@ class ExportBGEO(CommandBase):
 
             # set frame range
             rop_output.parm("trange").set(1)
-            rop_output.parmTuple("f").deleteAllKeyframes() # Needed
+            rop_output.parmTuple("f").deleteAllKeyframes()  # Needed
             rop_output.parmTuple("f").set((start_frame, end_frame, 0))
 
             # register final path
@@ -86,10 +98,21 @@ class ExportBGEO(CommandBase):
             rop_output.destroy()
 
         # get current selection
-        selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]
+        selected_object = [
+            item.path()
+            for item in hou.selectedNodes()
+            if item.type().category().name() == "Sop"
+        ]
         while len(selected_object) == 0:
-            await self._prompt_info_parameter(action_query,  "No nodes selected,\n please select Sop nodes and continue.")
-            selected_object = [item.path() for item in hou.selectedNodes() if item.type().category().name() == "Sop" ]     
+            await self._prompt_info_parameter(
+                action_query,
+                "No nodes selected,\n please select Sop nodes and continue.",
+            )
+            selected_object = [
+                item.path()
+                for item in hou.selectedNodes()
+                if item.type().category().name() == "Sop"
+            ]
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
@@ -102,16 +125,32 @@ class ExportBGEO(CommandBase):
 
         # compute final name
         extension = await gazu.files.get_output_type_by_name("bgeo")
-        temp_outfilename = outdir / f"{outfilename}_{root_name}_$F4" if root_name else outdir / f"{outfilename}_$F4"
-        final_filename = str(pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}"))
-        await Utils.wrapped_execute(action_query, export_bgeo, selected_object, final_filename, start_frame, end_frame)
+        temp_outfilename = (
+            outdir / f"{outfilename}_{root_name}_$F4"
+            if root_name
+            else outdir / f"{outfilename}_$F4"
+        )
+        final_filename = str(
+            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
+        )
+        await Utils.wrapped_execute(
+            action_query,
+            export_bgeo,
+            selected_object,
+            final_filename,
+            start_frame,
+            end_frame,
+        )
 
         logger.info(f"Done export obj, output paths : {outdir}")
         return str(outdir)
+
     async def setup(
         self,
         parameters: Dict[str, Any],
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
+        self.command_buffer.parameters["frame_range"].hide = parameters.get(
+            "timeline_as_framerange"
+        )

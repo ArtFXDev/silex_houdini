@@ -43,7 +43,9 @@ class ExportABC(CommandBase):
         },
     }
 
-    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
+    async def _prompt_info_parameter(
+        self, action_query: ActionQuery, message: str, level: str = "warning"
+    ) -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
@@ -53,7 +55,7 @@ class ExportABC(CommandBase):
             type=TextParameterMeta(level),
             name="Info",
             label="Info",
-            value= f"Warning : {message}",
+            value=f"Warning : {message}",
         )
         # Prompt the user with a label
         prompt = await self.prompt_user(action_query, {"info": info_parameter})
@@ -100,7 +102,10 @@ class ExportABC(CommandBase):
 
         # Test/update current selection
         while len(selected_object) == 0:
-            await self._prompt_info_parameter(action_query, "No nodes selected,\n please select Object nodes and continue.")
+            await self._prompt_info_parameter(
+                action_query,
+                "No nodes selected,\n please select Object nodes and continue.",
+            )
             selected_object = [
                 item.path()
                 for item in hou.selectedNodes()
@@ -131,7 +136,14 @@ class ExportABC(CommandBase):
             start_frame = range_playbar.x()
             end_frame = range_playbar.y()
 
-        await Utils.wrapped_execute(action_query, export_abc, selected_object, final_filename, start_frame, end_frame)
+        await Utils.wrapped_execute(
+            action_query,
+            export_abc,
+            selected_object,
+            final_filename,
+            start_frame,
+            end_frame,
+        )
 
         # export
         logger.info(f"Done export abc, output paths : {final_filename}")
@@ -143,4 +155,6 @@ class ExportABC(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
+        self.command_buffer.parameters["frame_range"].hide = parameters.get(
+            "timeline_as_framerange"
+        )

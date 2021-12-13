@@ -9,9 +9,12 @@ from concurrent import futures
 if hou.isUIAvailable():
     import hdefereval
 
+
 class Utils:
     @staticmethod
-    async def wrapped_execute(action_query, houdini_function: Callable, *args, **kwargs):
+    async def wrapped_execute(
+        action_query, houdini_function: Callable, *args, **kwargs
+    ):
 
         future = action_query.event_loop.loop.create_future()
 

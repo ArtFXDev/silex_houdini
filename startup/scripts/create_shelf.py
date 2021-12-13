@@ -48,9 +48,9 @@ def create_shelf():
     for item in Config().actions:
         action = ActionQuery(item["name"])
         actions[item["name"]] = {
-            "script":  f"{import_statement}ActionQuery('{item['name']}').execute()",
+            "script": f"{import_statement}ActionQuery('{item['name']}').execute()",
             "icon": action.buffer.thumbnail,
-            "label": action.buffer.label
+            "label": action.buffer.label,
         }
 
     shelf_tools = []
