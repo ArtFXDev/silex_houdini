@@ -50,12 +50,13 @@ class SetUpdateMode(CommandBase):
         new_mode = update_mode_mapping.get(mode, "Auto")
         await Utils.wrapped_execute(action_query, hou.setUpdateMode, new_mode)
 
-        previous_mode_key = next(key for key, value in update_mode_mapping.items() if value == current_mode)
-        new_mode_key = next(key for key, value in update_mode_mapping.items() if value == new_mode)
+        previous_mode_key = next(
+            key for key, value in update_mode_mapping.items() if value == current_mode
+        )
+        new_mode_key = next(
+            key for key, value in update_mode_mapping.items() if value == new_mode
+        )
         return {
             "previous_mode": previous_mode_key,
             "new_mode": new_mode_key,
         }
-        
-
-

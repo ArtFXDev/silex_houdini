@@ -30,7 +30,7 @@ class ExportFBX(CommandBase):
             "hide": False,
         },
         "timeline_as_framerange": {
-            "label": "Take framerange frame-range?",
+            "label": "Use timeline as frame-range",
             "type": bool,
             "value": False,
             "hide": False,
@@ -42,7 +42,9 @@ class ExportFBX(CommandBase):
         },
     }
 
-    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
+    async def _prompt_info_parameter(
+        self, action_query: ActionQuery, message: str, level: str = "warning"
+    ) -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
@@ -52,7 +54,7 @@ class ExportFBX(CommandBase):
             type=TextParameterMeta(level),
             name="Info",
             label="Info",
-            value= f"Warning : {message}",
+            value=f"Warning : {message}",
         )
         # Prompt the user with a label
         prompt = await self.prompt_user(action_query, {"info": info_parameter})
@@ -74,7 +76,6 @@ class ExportFBX(CommandBase):
         start_frame = parameters.get("frame_range")[0]
         end_frame = parameters.get("frame_range")[1]
 
-
         def export_fbx(selected_object, final_filename, start_frame, end_frame):
             # listname
             selected_name = [item.name() for item in selected_object]
@@ -92,7 +93,9 @@ class ExportFBX(CommandBase):
             fbx_rop.parmTuple("f").deleteAllKeyframes()  # Needed
             fbx_rop.parmTuple("f").set((start_frame, end_frame, 0))
 
-            selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
+            selected = [
+                hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name
+            ]
 
             hou.moveNodesTo(selected_object, temp_subnet)
 
@@ -105,18 +108,20 @@ class ExportFBX(CommandBase):
             # remove fbx export
             fbx_rop.destroy()
 
-            #reup node in temp_subnet into /obj
-            selected = [hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name]
+            # reup node in temp_subnet into /obj
+            selected = [
+                hou.node(f"{temp_subnet.path()}/{item}") for item in selected_name
+            ]
             hou.moveNodesTo(selected, hou.node("/obj/"))
 
-            #remove temp_subnet
+            # remove temp_subnet
             temp_subnet.destroy()
 
-    
         # get current selection
         while len(hou.selectedNodes()) == 0:
             await self._prompt_info_parameter(
-                action_query, "No nodes selected, please select Object nodes and continue."
+                action_query,
+                "No nodes selected, please select Object nodes and continue.",
             )
 
         # get time dependent nodes
@@ -163,7 +168,14 @@ class ExportFBX(CommandBase):
             start_frame = range_playbar.x()
             end_frame = range_playbar.y()
 
-        await Utils.wrapped_execute(action_query, export_fbx, selected_object, final_filename, start_frame, end_frame)
+        await Utils.wrapped_execute(
+            action_query,
+            export_fbx,
+            selected_object,
+            final_filename,
+            start_frame,
+            end_frame,
+        )
 
         # export
         logger.info(f"Done export fbx, output paths : {final_filename}")
@@ -176,7 +188,9 @@ class ExportFBX(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
+        self.command_buffer.parameters["frame_range"].hide = parameters.get(
+            "timeline_as_framerange"
+        )
 
     @CommandBase.conform_command()
     async def __undo__(
