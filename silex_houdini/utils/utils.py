@@ -1,16 +1,17 @@
+import hou
 import asyncio
-import hdefereval
+import threading
 from typing import Callable
 from silex_client.utils.log import logger
 from silex_client.core.context import Context
 from concurrent import futures
 
+if hou.isUIAvailable():
+    import hdefereval
 
 class Utils:
     @staticmethod
-    async def wrapped_execute(
-        action_query, houdini_function: Callable, *args, **kwargs
-    ):
+    async def wrapped_execute(action_query, houdini_function: Callable, *args, **kwargs):
 
         future = action_query.event_loop.loop.create_future()
 
@@ -28,7 +29,11 @@ class Utils:
                 Context.get().event_loop.register_task(set_future_exception(ex))
 
         # This maya function execute the given function in the main thread
-        hdefereval.executeDeferred(wrapped_function)
+        if hou.isUIAvailable():
+            hdefereval.executeDeferred(wrapped_function)
+        else:
+            thread = threading.Thread(target=wrapped_function, daemon=True)
+            thread.start()
 
         def callback(task_result: futures.Future):
             if task_result.cancelled():

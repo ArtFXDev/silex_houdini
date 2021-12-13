@@ -11,6 +11,11 @@ hip:
       label: "Conform Houdini scene's references"
       index: 20
       commands:
+        manual_mode:
+          label: "Set update mode to manual"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode: "Manual"
         open:
           label: "Open scene to conform"
           path: "silex_houdini.commands.open.Open"
@@ -25,7 +30,7 @@ hip:
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values: !command-output "conform_references:get_references:file_paths"
-            actions: 
+            actions:
               - "conform"
             categories:
               - "action"
@@ -42,6 +47,7 @@ hip:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
+            name: !command-output "input:input:file_paths"
             use_current_context: false
             create_temp_dir: false
             frame_set:
@@ -58,13 +64,12 @@ hip:
           parameters:
             attributes: !command-output "conform_references:get_references:attributes"
             values: !command-output "conform_references:conform_references"
-            indexes: !command-output "conform_references:get_references:indexes"
         clean_hdas:
           label: "Remove unused HDA definitions"
           path: "silex_houdini.commands.clear_hdas.ClearHDAs"
           tooltip: "Uninstall the HDA definitions that where repathed"
         save:
-          label: "Save the maya scene to the right location"
+          label: "Save the houdini scene to the right location"
           path: "silex_houdini.commands.save.Save"
           parameters:
             file_path: !command-output "conform_scene:build_output_path:full_path"
@@ -74,6 +79,11 @@ hip:
           parameters:
             file_path: !command-output "conform_references:open:old_path"
             save: False
+        previous_mode:
+          label: "Set update mode to its original value"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode: !command-output "conform_references:manual_mode:previous_mode"
 
     output:
       index: 40

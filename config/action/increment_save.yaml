@@ -1,6 +1,6 @@
-build:
+increment_save:
   hide: true
-  thumbnail: "build.svg"
+  thumbnail: "save_increment.svg"
   steps:
     save:
       label: "Save"
@@ -8,7 +8,10 @@ build:
       commands:
         build_work_path:
           path: "silex_client.commands.build_work_path.BuildWorkPath"
+          parameters:
+            increment: true
         save_scene:
           path: "silex_houdini.commands.save.Save"
           parameters:
             file_path: !command-output "save:build_work_path"
+
