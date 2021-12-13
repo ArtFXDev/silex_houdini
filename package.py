@@ -21,6 +21,10 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/config")
     env.PYTHONPATH.append("{root}")
     env.HOUDINI_PATH.append("{root}/startup")
+    env.PYTHONPATH.append("{root}/startup/scripts")
+
+    parser_module = ".".join(["silex_houdini", "cli", "parser"])
+    alias("silex", f"hython -m {parser_module}")
 
 
 @late()

@@ -2,11 +2,9 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
-
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -15,15 +13,16 @@ if typing.TYPE_CHECKING:
 
 import hou
 import os
-import pathlib
 import gazu
+import pathlib
+import logging
 
 
-class ExportABC(CommandBase):
+class ExportBGEO(CommandBase):
 
     parameters = {
-        "file_dir": {"label": "Out directory", "type": pathlib.Path},
-        "file_name": {"label": "Out filename", "type": pathlib.Path},
+        "file_dir": {"label": "Out directory", "type": pathlib.Path, "value": ""},
+        "file_name": {"label": "Out filename", "type": pathlib.Path, "value": ""},
         "timeline_as_framerange": {
             "label": "Use timeline as frame-range",
             "type": bool,
@@ -63,61 +62,60 @@ class ExportABC(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        outdir = parameters["file_dir"]
-        outfilename = parameters["file_name"]
-        used_timeline = parameters["timeline_as_framerange"]
-        start_frame = parameters["frame_range"][0]
-        end_frame = parameters["frame_range"][1]
+        outdir = parameters.get("file_dir")
+        outfilename = parameters.get("file_name")
+        root_name = parameters.get("root_name")
+        used_timeline = parameters.get("timeline_as_framerange")
+        start_frame = parameters.get("frame_range")[0]
+        end_frame = parameters.get("frame_range")[1]
 
-        def export_abc(selected_object, final_filename, start_frame, end_frame):
-            # create a temporary ROP node
-            abc_out = hou.node("/out").createNode("alembic")
-            abc_out.parm("filename").set(final_filename)
-            abc_out.parm("objects").set(selected_object)
+        def export_bgeo(selected_object, final_filename, start_frame, end_frame):
+            merge_sop = hou.node(
+                hou.node(selected_object[0]).parent().path()
+            ).createNode("merge")
+            for node in selected_object:
+                node = hou.node(node)
+                merge_sop.setNextInput(node)
 
-            # Set frame range
-            abc_out.parm("trange").set(1)
-            abc_out.parmTuple("f").deleteAllKeyframes()  # Needed
-            abc_out.parmTuple("f").set((start_frame, end_frame, 0))
+            # create rop output
+            rop_output = hou.node(merge_sop.parent().path())
+            rop_output = rop_output.createNode("rop_geometry")
+            rop_output.setInput(0, merge_sop)
 
-            # link node to object
-            abc_out.parm("execute").pressButton()
+            # set frame range
+            rop_output.parm("trange").set(1)
+            rop_output.parmTuple("f").deleteAllKeyframes()  # Needed
+            rop_output.parmTuple("f").set((start_frame, end_frame, 0))
 
-            # remove node
-            abc_out.destroy()
+            # register final path
+            rop_output.parm("sopoutput").set(final_filename)
+
+            # execute
+            rop_output.parm("execute").pressButton()
+
+            # remove temp_subnet
+            merge_sop.destroy()
+            rop_output.destroy()
 
         # get current selection
         selected_object = [
             item.path()
             for item in hou.selectedNodes()
-            if item.type().category().name() == "Object"
+            if item.type().category().name() == "Sop"
         ]
-
-        # Test/update current selection
         while len(selected_object) == 0:
             await self._prompt_info_parameter(
                 action_query,
-                "No nodes selected,\n please select Object nodes and continue.",
+                "No nodes selected,\n please select Sop nodes and continue.",
             )
             selected_object = [
                 item.path()
                 for item in hou.selectedNodes()
-                if item.type().category().name() == "Object"
+                if item.type().category().name() == "Sop"
             ]
-
-        # get list of name ofcurrent selection
-        selected_object = " ".join(selected_object)
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
-
-        # compute final path
-        extension = await gazu.files.get_output_type_by_name("abc")
-        temp_outfilename = outdir / f"{outfilename}"
-
-        final_filename = str(
-            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
-        )
 
         # Set frame range
         if used_timeline:
@@ -125,18 +123,27 @@ class ExportABC(CommandBase):
             start_frame = range_playbar.x()
             end_frame = range_playbar.y()
 
+        # compute final name
+        extension = await gazu.files.get_output_type_by_name("bgeo")
+        temp_outfilename = (
+            outdir / f"{outfilename}_{root_name}_$F4"
+            if root_name
+            else outdir / f"{outfilename}_$F4"
+        )
+        final_filename = str(
+            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
+        )
         await Utils.wrapped_execute(
             action_query,
-            export_abc,
+            export_bgeo,
             selected_object,
             final_filename,
             start_frame,
             end_frame,
         )
 
-        # export
-        logger.info(f"Done export abc, output paths : {final_filename}")
-        return final_filename
+        logger.info(f"Done export obj, output paths : {outdir}")
+        return str(outdir)
 
     async def setup(
         self,

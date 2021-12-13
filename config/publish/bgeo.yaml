@@ -1,12 +1,13 @@
-obj:
+bgeo:
   steps:
     export:
       label: "Export"
       index: 50
       commands:
-        export_obj:
-          label: "Export in OBJ"
-          path: "silex_houdini.commands.export_obj.ExportOBJ"
+        export_bgeo:
+          label: "Export in BGEO"
+          path: "silex_houdini.commands.export_bgeo.ExportBGEO"
+          ask_user: true
           parameters:
             file_dir: !command-output "setup:build_output_path:temp_directory"
             file_name: !command-output "setup:build_output_path:file_name"
@@ -19,7 +20,7 @@ obj:
           label: "Move exported files to publish folder"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: !command-output "export:export_obj"
+            src: !command-output "export:export_bgeo"
             dst: !command-output "setup:build_output_path:directory"
         remove:
           label: "Remove temp directory"
