@@ -14,6 +14,7 @@ from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
+from silex_houdini.commands.build import Build
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -27,6 +28,8 @@ References = List[
         Union[List[pathlib.Path], pathlib.Path],
     ]
 ]
+
+PARAMETER_BLACK_LIST = ["SettingsOutput_img_file_path"]
 
 
 class GetReferences(CommandBase):
@@ -60,7 +63,7 @@ class GetReferences(CommandBase):
             type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file {file_path} referenced in {parameter} could not be reached",
+            value=f"The file:\n{file_path}\n\nReferenced in\n{parameter}\n\nCould not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
@@ -78,15 +81,15 @@ class GetReferences(CommandBase):
             action_query,
             {
                 "info": info_parameter,
-                "new_path": path_parameter,
                 "skip": skip_parameter,
+                "new_path": path_parameter,
             },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"]
 
-    async def _filter_references(
+    def _filter_references(
         self,
         references: List[Tuple[Any, pathlib.Path]],
         skipped_extensions: List[str] = [],
@@ -99,15 +102,21 @@ class GetReferences(CommandBase):
 
         for parameter, file_path in references:
             file_path = pathlib.Path(str(file_path))
-            if str(file_path) != r"C:\Users\Simon\Pictures\img.png":
-                continue
 
             if isinstance(parameter, hou.Parm):
+                # Get the real parameter
+                while parameter.getReferencedParm() != parameter:
+                    parameter = parameter.getReferencedParm()
+
                 # Get the node the parameter belongs to
                 node = parameter.node()
 
                 # Skip the references that are in a locked HDA
                 if node.isInsideLockedHDA():
+                    continue
+
+                # Skip black listed parameters
+                if parameter.name() in PARAMETER_BLACK_LIST:
                     continue
 
                 # Skip TOP network nodes
@@ -117,15 +126,12 @@ class GetReferences(CommandBase):
                 if node.type().category().name() == "Top":
                     continue
 
-                # Skip channel references
-                if parameter.getReferencedParm() != parameter:
-                    continue
-
                 # Skip hidden/disabled parameters
                 if parameter.isDisabled() or parameter.isHidden():
                     continue
 
                 # Skip hidden/disabled containing folders
+                is_hidden_folder = False
                 folders = {
                     p: p.parmTemplate()
                     for p in node.parms()
@@ -136,7 +142,10 @@ class GetReferences(CommandBase):
                         if folder_name in template.folderNames() and (
                             node_parameter.isDisabled() or node_parameter.isHidden()
                         ):
-                            continue
+                            is_hidden_folder = True
+                            break
+                if is_hidden_folder:
+                    continue
 
                 # Get the real path
                 file_path = pathlib.Path(str(parameter.eval()))
@@ -198,12 +207,16 @@ class GetReferences(CommandBase):
 
         # Get all the references of the scene
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
-        filtered_scene_references = await self._filter_references(
-            await scene_references, parameters["filters"], parameters["skip_conformed"]
+        filtered_scene_references = await Utils.wrapped_execute(
+            action_query,
+            self._filter_references,
+            await scene_references,
+            parameters["filters"],
+            parameters["skip_conformed"],
         )
 
         # Loop over all the filtered references
-        for parameter, file_path in filtered_scene_references:
+        for parameter, file_path in await filtered_scene_references:
             # Get the real path
             expanded_path = await Utils.wrapped_execute(
                 action_query, hou.expandString, str(file_path)
@@ -277,3 +290,13 @@ class GetReferences(CommandBase):
             "attributes": [file[0] for file in references_found],
             "file_paths": [file[1] for file in references_found],
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        new_path_parameter = self.command_buffer.parameters.get("new_path")
+        if new_path_parameter is not None:
+            new_path_parameter.hide = parameters.get("skip", True)

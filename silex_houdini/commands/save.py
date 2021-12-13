@@ -54,13 +54,14 @@ class Save(CommandBase):
             os.path.splitext(file_path)[0]
             + extension_mapping.get(hou.licenseCategory(), ".hip")
         )
+        file_name = file_path.as_posix()
 
         await Utils.wrapped_execute(
-            action_query, hou.hipFile.setName, file_name=file_path
+            action_query, hou.hipFile.setName, file_name=file_name
         )
         if not parameters["only_path"]:
             await Utils.wrapped_execute(
-                action_query, hou.hipFile.save, file_name=file_path
+                action_query, hou.hipFile.save, file_name=file_name
             )
 
-        return {"new_path": file_path}
+        return {"new_path": file_name}
