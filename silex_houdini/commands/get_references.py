@@ -29,6 +29,7 @@ References = List[
 ]
 
 PARAMETER_BLACK_LIST = ["SettingsOutput_img_file_path"]
+FILES_BLACK_LIST = ["OPlibVRay.hda"]
 
 
 class GetReferences(CommandBase):
@@ -53,10 +54,12 @@ class GetReferences(CommandBase):
 
     async def _prompt_new_path(
         self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
-    ) -> Tuple[pathlib.Path, bool]:
+    ) -> Tuple[pathlib.Path, bool, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
+        current_skip = self.command_buffer.parameters.get("skip")
+        current_skip_value = current_skip.value if current_skip is not None else False
         # Create a new parameter to prompt for the new file path
         info_parameter = ParameterBuffer(
             type=TextParameterMeta("warning"),
@@ -72,21 +75,28 @@ class GetReferences(CommandBase):
         skip_parameter = ParameterBuffer(
             type=bool,
             name="skip",
-            value=False,
+            value=current_skip_value,
             label=f"Skip this reference",
+        )
+        skip_all_parameter = ParameterBuffer(
+            type=bool,
+            name="skip_all",
+            value=False,
+            label=f"Skip all unresolved reference",
         )
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
             {
                 "info": info_parameter,
+                "skip_all": skip_all_parameter,
                 "skip": skip_parameter,
                 "new_path": path_parameter,
             },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
-        return response["new_path"], response["skip"]
+        return response["new_path"], response["skip"], response["skip_all"]
 
     def _filter_references(
         self,
@@ -109,6 +119,9 @@ class GetReferences(CommandBase):
 
                 # Get the node the parameter belongs to
                 node = parameter.node()
+
+                # Get the real path
+                file_path = pathlib.Path(str(parameter.eval()))
 
                 # Skip the references that are in a locked HDA
                 if node.isInsideLockedHDA():
@@ -146,9 +159,6 @@ class GetReferences(CommandBase):
                 if is_hidden_folder:
                     continue
 
-                # Get the real path
-                file_path = pathlib.Path(str(parameter.eval()))
-
             # Skip invalid path
             if not is_valid_path(str(file_path)):
                 continue
@@ -161,7 +171,11 @@ class GetReferences(CommandBase):
             if skip_conformed and is_valid_pipeline_path(file_path):
                 continue
 
-            # Skip path relative to HOUDINI_PATH
+            # Skip black listed parameters
+            if file_path.name in FILES_BLACK_LIST:
+                continue
+
+        # Skip path relative to HOUDINI_PATH
             houdini_path_relative = False
             for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
                 if not os.path.exists(houdini_path):
@@ -173,6 +187,10 @@ class GetReferences(CommandBase):
 
             # Skip the custom extensions provided
             if "".join(pathlib.Path(file_path).suffixes) in skipped_extensions:
+                continue
+
+            # Skip duplicates
+            if (parameter, file_path) in filtered_references:
                 continue
 
             filtered_references.append((parameter, file_path))
@@ -215,6 +233,7 @@ class GetReferences(CommandBase):
         )
 
         # Loop over all the filtered references
+        skip_all = False
         for parameter, file_path in await filtered_scene_references:
             # Get the real path
             expanded_path = await Utils.wrapped_execute(
@@ -224,14 +243,14 @@ class GetReferences(CommandBase):
 
             # Make sure the file path leads to a reachable file
             skip = False
-            while not file_path.exists():
-                file_path, skip = await self._prompt_new_path(
+            while not file_path.exists() and not skip_all:
+                file_path, skip, skip_all = await self._prompt_new_path(
                     action_query, file_path, parameter
                 )
-                if skip or file_path is None:
+                if skip or file_path is None or skip_all:
                     break
             # The user can decide to skip the references that are not reachable
-            if skip or file_path is None:
+            if skip or file_path is None or skip_all:
                 logger.info("Skipping the reference at %s", parameter)
                 continue
 
@@ -241,7 +260,7 @@ class GetReferences(CommandBase):
                 definitions = await Utils.wrapped_execute(
                     action_query, hou.hda.definitionsInFile, file_path.as_posix()
                 )
-                references_found.append((await definitions, file_path))
+                references_found.append((list(await definitions), file_path))
 
             # Look for file sequence
             sequence = None
@@ -298,6 +317,10 @@ class GetReferences(CommandBase):
     ):
         new_path_parameter = self.command_buffer.parameters.get("new_path")
         skip_parameter = self.command_buffer.parameters.get("skip")
-        if new_path_parameter is not None and skip_parameter is not None:
+        skip_all_parameter = self.command_buffer.parameters.get("skip_all")
+        if new_path_parameter is not None and skip_parameter is not None and skip_all_parameter is not None:
+            if not skip_all_parameter.hide:
+                skip_parameter.hide = parameters.get("skip_all", True)
+                new_path_parameter.hide = parameters.get("skip_all", True)
             if not skip_parameter.hide:
                 new_path_parameter.hide = parameters.get("skip", True)
