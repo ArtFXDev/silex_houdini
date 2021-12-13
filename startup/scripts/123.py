@@ -11,8 +11,9 @@ Context.get().start_services()
 create_shelf()
 
 # Add a shortcut for increment and save
-inctement_save_symbol = hou.hotkeys.hotkeySymbol("/Houdini", "increment_save")
-hou.hotkeys.addAssignment(inctement_save_symbol, "alt+shift+s")
+if hou.isUIAvailable():
+    inctement_save_symbol = hou.hotkeys.hotkeySymbol("/Houdini", "increment_save")
+    hou.hotkeys.addAssignment(inctement_save_symbol, "alt+shift+s")
 
 # Add a save callback
 def save_callback(event_type):

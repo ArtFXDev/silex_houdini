@@ -62,7 +62,7 @@ class GetReferences(CommandBase):
             type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file:\n{file_path}\n\nReferenced in\n{parameter}\n\nCould not be reached",
+            value=f"The file:\n{file_path}\n\nReferenced in:\n{parameter}\n\nCould not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
