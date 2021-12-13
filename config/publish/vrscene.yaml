@@ -62,7 +62,7 @@ vrscene:
       index: 60
       commands:
         move:
-          label: "Move"
+          label: "Move exported files to publish folder"
           path: "silex_client.commands.move.Move"
           parameters:
             src: !command-output "export:export_vrscene"

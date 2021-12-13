@@ -31,7 +31,9 @@ class ExportOBJ(CommandBase):
         },
     }
 
-    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
+    async def _prompt_info_parameter(
+        self, action_query: ActionQuery, message: str, level: str = "warning"
+    ) -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
@@ -41,7 +43,7 @@ class ExportOBJ(CommandBase):
             type=TextParameterMeta(level),
             name="Info",
             label="Info",
-            value= f"Warning : {message}",
+            value=f"Warning : {message}",
         )
         # Prompt the user with a label
         prompt = await self.prompt_user(action_query, {"info": info_parameter})
@@ -61,14 +63,14 @@ class ExportOBJ(CommandBase):
 
         def export_obj(selected_object, final_filename):
             merge_sop = hou.node(selected_object[0].parent().path()).createNode("merge")
-            
+
             # create temp root node
             for node in selected_object:
                 merge_sop.setNextInput(node)
             # Test output path exist
             os.makedirs(outdir, exist_ok=True)
 
-            hou.node(merge_sop.path()).geometry().saveToFile(final_filename)        
+            hou.node(merge_sop.path()).geometry().saveToFile(final_filename)
 
             # remove temp_subnet
             merge_sop.destroy()
@@ -81,7 +83,10 @@ class ExportOBJ(CommandBase):
 
         # get current selection
         while len(selected_object) == 0:
-            await self._prompt_info_parameter(action_query, "No nodes selected,\n please select Sop nodes and continue.")
+            await self._prompt_info_parameter(
+                action_query,
+                "No nodes selected,\n please select Sop nodes and continue.",
+            )
             selected_object = [
                 item
                 for item in hou.selectedNodes()
@@ -98,7 +103,9 @@ class ExportOBJ(CommandBase):
         final_filename = str(
             pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
         )
-        await Utils.wrapped_execute(action_query, export_obj, selected_object, final_filename)
+        await Utils.wrapped_execute(
+            action_query, export_obj, selected_object, final_filename
+        )
 
         # export
         logger.info(f"Done export obj, output paths : {final_filename}")
