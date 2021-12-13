@@ -14,7 +14,6 @@ from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
-from silex_houdini.commands.build import Build
 from silex_houdini.utils.utils import Utils
 
 # Forward references
