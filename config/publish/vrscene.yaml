@@ -12,12 +12,22 @@ vrscene:
         get_references:
           label: "Get referenced files"
           path: "silex_houdini.commands.get_references.GetReferences"
+          parameters:
+            filters:
+              - ".obj"
+              - ".fbx"
+              - ".bgeo"
+              - ".bgeo.sc"
+              - ".hda"
+              - ".hdanc"
+              - ".abc"
+              - ".abc"
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values: !command-output "check_references:get_references:file_paths"
-            actions: 
+            actions:
               - "conform"
             categories:
               - "action"
@@ -35,7 +45,6 @@ vrscene:
           parameters:
             attributes: !command-output "check_references:get_references:attributes"
             values: !command-output "check_references:conform_references"
-            indexes: !command-output "check_references:get_references:indexes"
 
     export:
       label: "Export"

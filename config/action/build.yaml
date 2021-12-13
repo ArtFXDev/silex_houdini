@@ -1,6 +1,6 @@
 build:
   hide: true
-  thumbnail: "$SILEX_ICONS/build.svg"
+  thumbnail: "build.svg"
   steps:
     save:
       label: "Save"

@@ -22,7 +22,9 @@ def commands():
     env.PYTHONPATH.append("{root}")
     env.HOUDINI_PATH.append("{root}/startup")
     env.PYTHONPATH.append("{root}/startup/scripts")
-    env.SILEX_ICONS = "{root}/startup/icons"
+
+    parser_module = ".".join(["silex_houdini", "cli", "parser"])
+    alias("silex", f"hython -m {parser_module}")
 
 
 @late()

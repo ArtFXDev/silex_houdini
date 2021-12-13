@@ -22,7 +22,12 @@ class Save(CommandBase):
 
     parameters = {
         "file_path": {"label": "filename", "type": str, "value": None, "hide": False},
-        "only_path": {"label": "Only set the path", "type": bool, "value": False, "hide": True},
+        "only_path": {
+            "label": "Only set the path",
+            "type": bool,
+            "value": False,
+            "hide": True,
+        },
     }
 
     @CommandBase.conform_command()
@@ -37,9 +42,26 @@ class Save(CommandBase):
         logger.info("Saving scene to %s", file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        if parameters["only_path"]:
-            await Utils.wrapped_execute(action_query, hou.hipFile.setName, file_name=file_path)
-        else:
-            await Utils.wrapped_execute(action_query, hou.hipFile.save, file_name=file_path)
+        # Set the right extension according to the license type
+        extension_mapping = {
+            hou.licenseCategoryType.Apprentice: ".hipnc",
+            hou.licenseCategoryType.Education: ".hipnc",
+            hou.licenseCategoryType.ApprenticeHD: ".hipnc",
+            hou.licenseCategoryType.Indie: ".hiplc",
+            hou.licenseCategoryType.Commercial: ".hip",
+        }
+        file_path = pathlib.Path(
+            os.path.splitext(file_path)[0]
+            + extension_mapping.get(hou.licenseCategory(), ".hip")
+        )
+        file_name = file_path.as_posix()
 
-        return {"new_path": file_path}
+        await Utils.wrapped_execute(
+            action_query, hou.hipFile.setName, file_name=file_name
+        )
+        if not parameters["only_path"]:
+            await Utils.wrapped_execute(
+                action_query, hou.hipFile.save, file_name=file_name
+            )
+
+        return {"new_path": file_name}

@@ -1,6 +1,6 @@
 increment_save:
   hide: true
-  thumbnail: "$SILEX_ICONS/save_increment.svg"
+  thumbnail: "save_increment.svg"
   steps:
     save:
       label: "Save"
