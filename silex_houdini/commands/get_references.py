@@ -7,6 +7,7 @@ import logging
 import os
 import pathlib
 from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
+from collections import defaultdict
 
 import hou
 
@@ -307,6 +308,12 @@ class GetReferences(CommandBase):
         # Send the message to the user
         if referenced_file_paths:
             await self.prompt_user(action_query, {"info": info_parameter})
+
+        # Group the references by folder
+        grouped_references = defaultdict(list)
+        for attribute, file_path in references_found:
+            parent = file_path[0].parent if isinstance(file_path, list) else file_path.parent
+            grouped_references[parent].append((attribute, file_path))
 
         return {
             "attributes": [file[0] for file in references_found],
