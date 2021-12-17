@@ -30,6 +30,7 @@ References = List[
 
 PARAMETER_BLACK_LIST = ["SettingsOutput_img_file_path"]
 FILES_BLACK_LIST = ["OPlibVRay.hda"]
+NODE_BLACK_LIST = []
 
 
 class GetReferences(CommandBase):
@@ -58,33 +59,39 @@ class GetReferences(CommandBase):
         """
         Helper to prompt the user for a new path and wait for its response
         """
+        # Remember the last value of skip the skip parameter
         current_skip = self.command_buffer.parameters.get("skip")
         current_skip_value = current_skip.value if current_skip is not None else False
-        # Create a new parameter to prompt for the new file path
+        
+        # Create the info parameter, just a label to inform the user
         info_parameter = ParameterBuffer(
             type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
             value=f"The file:\n{file_path}\n\nReferenced in:\n{parameter}\n\nCould not be reached",
         )
+        # Create the path parameter, to allow specify a new path
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
             name="new_path",
             label=f"New path",
         )
+        # Create the skip parameter, if the user don't want to conform this reference
         skip_parameter = ParameterBuffer(
             type=bool,
             name="skip",
             value=current_skip_value,
             label=f"Skip this reference",
         )
+        # Create the skip all parameter, if the user is sure that all the unresolved refences are useless
         skip_all_parameter = ParameterBuffer(
             type=bool,
             name="skip_all",
             value=False,
             label=f"Skip all unresolved reference",
         )
-        # Prompt the user to get the new path
+
+        # Prompt the user with the new form
         response = await self.prompt_user(
             action_query,
             {
@@ -94,6 +101,7 @@ class GetReferences(CommandBase):
                 "new_path": path_parameter,
             },
         )
+        # Convert the response
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"], response["skip_all"]
