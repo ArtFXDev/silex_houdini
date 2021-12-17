@@ -18,7 +18,7 @@ def commands():
     """
     Set the environment variables for silex_houdini
     """
-    env.SILEX_ACTION_CONFIG.prepend("{root}/config")
+    env.SILEX_ACTION_CONFIG.prepend("{root}/silex_houdini/config")
     env.PYTHONPATH.append("{root}")
     env.HOUDINI_PATH.append("{root}/startup")
     env.PYTHONPATH.append("{root}/startup/scripts")
