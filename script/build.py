@@ -9,7 +9,6 @@ def build(source_path, build_path, install_path, targets):
     Build the rez package and install it if requested
     """
     src = os.path.join(source_path, "silex_houdini")
-    config = os.path.join(source_path, "config")
     startup = os.path.join(source_path, "startup")
     package = os.path.join(source_path, "package.py")
 
@@ -17,13 +16,11 @@ def build(source_path, build_path, install_path, targets):
     if os.path.exists(build_path):
         with contextlib.suppress(FileNotFoundError):
             shutil.rmtree(os.path.join(build_path, "silex_houdini"))
-            shutil.rmtree(os.path.join(build_path, "config"))
             shutil.rmtree(os.path.join(build_path, "startup"))
             os.remove(os.path.join(build_path, "package.py"))
 
     # Copy the source to the build location
     shutil.copytree(src, os.path.join(build_path, "silex_houdini"))
-    shutil.copytree(config, os.path.join(build_path, "config"))
     shutil.copytree(startup, os.path.join(build_path, "startup"))
     shutil.copy(package, build_path)
 
@@ -35,7 +32,6 @@ def build(source_path, build_path, install_path, targets):
 
         # Copy the source to the install location
         shutil.copytree(src, os.path.join(install_path, "silex_houdini"))
-        shutil.copytree(config, os.path.join(install_path, "config"))
         shutil.copytree(startup, os.path.join(install_path, "startup"))
         shutil.copy(package, install_path)
 
