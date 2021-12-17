@@ -139,6 +139,10 @@ class GetReferences(CommandBase):
                 if parameter.name() in PARAMETER_BLACK_LIST:
                     continue
 
+                # Skip black listed nodes
+                if node.type().name() in NODE_BLACK_LIST:
+                    continue
+
                 # Skip TOP network nodes
                 if node.type().category().name() == "TopNet":
                     continue
@@ -179,7 +183,7 @@ class GetReferences(CommandBase):
             if skip_conformed and is_valid_pipeline_path(file_path):
                 continue
 
-            # Skip black listed parameters
+            # Skip black listed file names
             if file_path.name in FILES_BLACK_LIST:
                 continue
 
