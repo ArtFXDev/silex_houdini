@@ -19,10 +19,12 @@ def create_shelf():
     for shelf_item in hou.shelves.shelves():
         if shelf_id in str(shelf_item):
             shelf = hou.shelves.shelves()[shelf_id]
+            if shelf:
+                # clear content of existing shelf
+                for tool_index in range(len(shelf.tools()), 0, -1):
+                    shelf.tools()[tool_index - 1].destroy()
 
-            # clear content of existing shelf
-            for tool_index in range(len(shelf.tools()), 0, -1):
-                shelf.tools()[tool_index - 1].destroy()
+
 
     if not shelf:
         shelf = hou.shelves.newShelf(name=shelf_id, label=shelf_id)
