@@ -59,7 +59,7 @@ class ExportHip(CommandBase):
 
         if not os.path.exists(export_path):
             raise Exception(
-                f"An error occured while exporting {export_path} to ma")
+                f"An error occured while exporting {export_path} to hip")
         return export_path
 
 
