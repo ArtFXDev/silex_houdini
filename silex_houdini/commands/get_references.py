@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import fileseq
 import hou
@@ -105,6 +105,20 @@ class GetReferences(CommandBase):
 
         return filtered_references
 
+    def _find_sequence(self, file_path: pathlib.Path) -> Tuple[Optional[fileseq.FileSequence], List[pathlib.Path]]:
+        sequence = None
+        regex = fileseq.FileSequence.DISK_RE
+
+        match = regex.match(str(file_path))
+        _, basename, _, ext = match.groups()
+        for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+            # Find the file sequence that correspond the to file we are looking for
+            sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+            if basename == file_sequence.basename() and ext == file_sequence.extension():
+                return sequence, sequence_list
+
+        return sequence, [file_path]
+
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -133,6 +147,8 @@ class GetReferences(CommandBase):
                 action_query, hou.expandString, str(file_path)
             )
             file_path = pathlib.Path(await expanded_path)
+            sequence, file_path = self._find_sequence(file_path)
+            file_path = file_path[0]
 
             # Make sure the file path leads to a reachable file
             skip = False
@@ -160,14 +176,7 @@ class GetReferences(CommandBase):
                 references_found.append((list(await definitions), file_path))
 
             # Look for file sequence
-            sequence = None
-            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                # Find the file sequence that correspond the to file we are looking for
-                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                if file_path in sequence_list and len(sequence_list) > 1:
-                    sequence = file_sequence
-                    file_path = sequence_list
-                    break
+            sequence, file_path = self._find_sequence(file_path)
 
             # Append to the references found
             references_found.append(([parameter], file_path))
