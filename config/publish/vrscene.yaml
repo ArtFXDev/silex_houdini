@@ -21,7 +21,6 @@ vrscene:
               - ".hda"
               - ".hdanc"
               - ".abc"
-              - ".abc"
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"

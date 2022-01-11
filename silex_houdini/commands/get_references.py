@@ -135,6 +135,7 @@ class GetReferences(CommandBase):
             action_query,
             reference.filter_references,
             await scene_references,
+            logger,
             parameters["filters"],
             parameters["skip_conformed"],
         )

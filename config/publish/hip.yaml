@@ -12,15 +12,6 @@ hip:
         get_references:
           label: "Get referenced files"
           path: "silex_houdini.commands.get_references.GetReferences"
-          parameters:
-            filters:
-              - ".obj"
-              - ".fbx"
-              - ".bgeo"
-              - ".bgeo.sc"
-              - ".hda"
-              - ".hdanc"
-              - ".abc"
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
