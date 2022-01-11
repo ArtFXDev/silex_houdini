@@ -1,10 +1,11 @@
-import hou
 import asyncio
 import threading
-from typing import Callable
-from silex_client.utils.log import logger
-from silex_client.core.context import Context
 from concurrent import futures
+from typing import Callable
+
+import hou
+from silex_client.core.context import Context
+from silex_client.utils.log import logger
 
 if hou.isUIAvailable():
     import hdefereval
@@ -31,7 +32,7 @@ class Utils:
             except Exception as ex:
                 Context.get().event_loop.register_task(set_future_exception(ex))
 
-        # This maya function execute the given function in the main thread
+        # This houdini function execute the given function in the main thread
         if hou.isUIAvailable():
             hdefereval.executeDeferred(wrapped_function)
         else:
