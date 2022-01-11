@@ -147,8 +147,8 @@ class GetReferences(CommandBase):
                 action_query, hou.expandString, str(file_path)
             )
             file_path = pathlib.Path(await expanded_path)
-            sequence, file_path = self._find_sequence(file_path)
-            file_path = file_path[0]
+            sequence, file_path_list = self._find_sequence(file_path)
+            file_path = file_path_list[0]
 
             # Make sure the file path leads to a reachable file
             skip = False
@@ -162,6 +162,9 @@ class GetReferences(CommandBase):
                 if skip or file_path is None or skip_all:
                     skip = True
                     break
+                # Recompute the sequence
+                sequence, file_path_list = self._find_sequence(file_path)
+
             # The user can decide to skip the references that are not reachable
             if skip or file_path is None:
                 logger.info("Skipping the reference at %s", parameter)
@@ -173,13 +176,10 @@ class GetReferences(CommandBase):
                 definitions = await Utils.wrapped_execute(
                     action_query, hou.hda.definitionsInFile, file_path.as_posix()
                 )
-                references_found.append((list(await definitions), file_path))
-
-            # Look for file sequence
-            sequence, file_path = self._find_sequence(file_path)
+                references_found.append((list(await definitions), file_path_list))
 
             # Append to the references found
-            references_found.append(([parameter], file_path))
+            references_found.append(([parameter], file_path_list))
             if sequence is None:
                 logger.info("Referenced file(s) %s found at %s", file_path, parameter)
             else:
