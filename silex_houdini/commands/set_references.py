@@ -3,9 +3,9 @@ import typing
 from typing import Any, Dict, List
 import logging
 import pathlib
-import fileseq
 
 import re
+from silex_client.utils import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
 
