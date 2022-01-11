@@ -16,11 +16,6 @@ from silex_houdini.utils.utils import Utils
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import importlib
-
-importlib.reload(reference)
-
-
 References = List[
     Tuple[
         List[Union[hou.Parm, hou.HDADefinition]],
