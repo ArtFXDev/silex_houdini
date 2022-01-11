@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-import os
 import pathlib
 
 # from inspect import getmembers, isfunction
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import Any, List, Tuple
 
 import hou
 from silex_client.utils.files import is_valid_pipeline_path
@@ -15,6 +14,7 @@ from silex_houdini.utils.module import get_functions_in_module
 
 def filter_references(
     references: List[Tuple[Any, pathlib.Path]],
+    logger: logging.Logger,
     skipped_extensions: List[str] = [],
     skip_conformed=True,
 ) -> List[Tuple[Any, pathlib.Path]]:
@@ -64,12 +64,14 @@ def filter_references(
             node = parameter.node()
 
             # Check the node against filters
-            filter_result = [
-                param_filter(node, parameter, file_path)
-                for param_filter in param_filters
-            ]
+            filter_hit= False
+            for param_filter in param_filters:
+                if param_filter(node, parameter, file_path):
+                    filter_hit = True
+                    logger.info("Skipping %s: Filtered by %s", file_path, param_filter)
+                    break
 
-            if any(filter_result):
+            if filter_hit:
                 continue
 
         filtered_references.append((parameter, file_path))
