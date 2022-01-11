@@ -66,3 +66,7 @@ def skip_rop(node, parameter, file_path) -> bool:
 
 def skip_dopio(node, parameter, file_path) -> bool:
     return node.type().name() == "dopio" and node.parm("loadfromdisk").eval() == 0
+
+
+def skip_bypassed(node, parameter, file_path) -> bool:
+    return isinstance(node, hou.SopNode) and node.isBypassed()
