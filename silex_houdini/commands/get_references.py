@@ -164,6 +164,7 @@ class GetReferences(CommandBase):
                     break
                 # Recompute the sequence
                 sequence, file_path_list = self._find_sequence(file_path)
+                file_path = file_path_list[0]
 
             # The user can decide to skip the references that are not reachable
             if skip or file_path is None:
