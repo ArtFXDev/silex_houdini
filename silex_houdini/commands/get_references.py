@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-import pathlib
-import fileseq
-import pathlib
 import logging
-import os
 import pathlib
-from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
 
+import fileseq
 import hou
-
-from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
+from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
+from silex_houdini.utils import reference
 from silex_houdini.utils.utils import Utils
 
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+
+import importlib
+
+importlib.reload(reference)
 
 
 References = List[
@@ -27,9 +27,6 @@ References = List[
         Union[List[pathlib.Path], pathlib.Path],
     ]
 ]
-
-PARAMETER_BLACK_LIST = ["SettingsOutput_img_file_path"]
-FILES_BLACK_LIST = ["OPlibVRay.hda"]
 
 
 class GetReferences(CommandBase):
@@ -98,105 +95,6 @@ class GetReferences(CommandBase):
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"], response["skip_all"]
 
-    def _filter_references(
-        self,
-        references: List[Tuple[Any, pathlib.Path]],
-        skipped_extensions: List[str] = [],
-        skip_conformed=True,
-    ) -> List[Tuple[Any, pathlib.Path]]:
-        """
-        Filter out all the references that we don't care about
-        """
-        filtered_references = []
-
-        for parameter, file_path in references:
-            file_path = pathlib.Path(str(file_path))
-
-            if isinstance(parameter, hou.Parm):
-                # Get the real parameter
-                while parameter.getReferencedParm() != parameter:
-                    parameter = parameter.getReferencedParm()
-
-                # Get the node the parameter belongs to
-                node = parameter.node()
-
-                # Get the real path
-                file_path = pathlib.Path(str(parameter.eval()))
-
-                # Skip the references that are in a locked HDA
-                if node.isInsideLockedHDA():
-                    continue
-
-                # Skip black listed parameters
-                if parameter.name() in PARAMETER_BLACK_LIST:
-                    continue
-
-                # Skip TOP network nodes
-                if node.type().category().name() == "TopNet":
-                    continue
-                # Skip TOP nodes
-                if node.type().category().name() == "Top":
-                    continue
-
-                # Skip hidden/disabled parameters
-                if parameter.isDisabled() or parameter.isHidden():
-                    continue
-
-                # Skip hidden/disabled containing folders
-                is_hidden_folder = False
-                folders = {
-                    p: p.parmTemplate()
-                    for p in node.parms()
-                    if isinstance(p.parmTemplate(), hou.FolderSetParmTemplate)
-                }
-                for folder_name in parameter.containingFolders():
-                    for node_parameter, template in folders.items():
-                        if folder_name in template.folderNames() and (
-                            node_parameter.isDisabled() or node_parameter.isHidden()
-                        ):
-                            is_hidden_folder = True
-                            break
-                if is_hidden_folder:
-                    continue
-
-            # Skip invalid path
-            if not is_valid_path(str(file_path)):
-                continue
-
-            # Skip path relative
-            if not file_path.is_absolute():
-                continue
-
-            # Skip the references that are already conformed
-            if skip_conformed and is_valid_pipeline_path(file_path):
-                continue
-
-            # Skip black listed parameters
-            if file_path.name in FILES_BLACK_LIST:
-                continue
-
-        # Skip path relative to HOUDINI_PATH
-            houdini_path_relative = False
-            for houdini_path in os.getenv("HOUDINI_PATH", "").split(os.pathsep):
-                if not os.path.exists(houdini_path):
-                    continue
-                if str(pathlib.Path(houdini_path)) in str(file_path):
-                    houdini_path_relative = True
-            if houdini_path_relative:
-                continue
-
-            # Skip the custom extensions provided
-            if "".join(pathlib.Path(file_path).suffixes) in skipped_extensions:
-                continue
-
-            # Skip duplicates
-            if (parameter, file_path) in filtered_references:
-                continue
-
-            filtered_references.append((parameter, file_path))
-
-        return filtered_references
-
     def _merge_duplicates(self, references: References) -> References:
         """
         Merge the files referenced multiple times into one item in the list of references
@@ -226,7 +124,7 @@ class GetReferences(CommandBase):
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
         filtered_scene_references = await Utils.wrapped_execute(
             action_query,
-            self._filter_references,
+            reference.filter_references,
             await scene_references,
             parameters["filters"],
             parameters["skip_conformed"],
@@ -322,7 +220,11 @@ class GetReferences(CommandBase):
         new_path_parameter = self.command_buffer.parameters.get("new_path")
         skip_parameter = self.command_buffer.parameters.get("skip")
         skip_all_parameter = self.command_buffer.parameters.get("skip_all")
-        if new_path_parameter is not None and skip_parameter is not None and skip_all_parameter is not None:
+        if (
+            new_path_parameter is not None
+            and skip_parameter is not None
+            and skip_all_parameter is not None
+        ):
             if not skip_all_parameter.hide:
                 skip_parameter.hide = parameters.get("skip_all", True)
                 new_path_parameter.hide = parameters.get("skip_all", True)
