@@ -18,7 +18,7 @@ import pathlib
 import logging
 
 
-class ExportBGEO(CommandBase):
+class ExportGeometry(CommandBase):
 
     parameters = {
         "file_dir": {"label": "Out directory", "type": pathlib.Path, "value": ""},
