@@ -56,7 +56,7 @@ class ExportVrscene(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        def export_fbx(selected_object, node, out_file_name, to_return, logger):
+        def export_vrscene(selected_object, node, out_file_name, to_return, logger):
             node_filename = f"{out_file_name}_{node.name()}"
             node_filename = pathlib.Path(os.path.join(outdir, node_filename))
             node_filename = str(
@@ -65,7 +65,7 @@ class ExportVrscene(CommandBase):
             to_return.append(node_filename)
             node.parm("render_export_filepath").set(node_filename)
             node.parm("render_export_mode").set("2")
-            logger.info(f"Done export abc, output paths : {node_filename}")
+            logger.info(f"Done export vrscene, output paths : {node_filename}")
 
         def exec(selected_object):
             selected_object.parm("execute").pressButton()
@@ -127,7 +127,7 @@ class ExportVrscene(CommandBase):
         for node in allowed_rop:
             await Utils.wrapped_execute(
                 action_query,
-                export_fbx,
+                export_vrscene,
                 selected_object,
                 node,
                 outFilename,
