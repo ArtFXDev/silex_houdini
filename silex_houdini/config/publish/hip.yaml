@@ -16,7 +16,9 @@ hip:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: !command-output "check_references:get_references:file_paths"
+            values: 
+              value: !command-output "check_references:get_references:file_paths"
+              hide: true
             actions:
               - "conform"
             categories:
@@ -33,8 +35,12 @@ hip:
           path: "silex_houdini.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
-            attributes: !command-output "check_references:get_references:attributes"
-            values: !command-output "check_references:conform_references"
+            attributes: 
+              value: !command-output "check_references:get_references:attributes"
+              hide: true
+            values: 
+              value: !command-output "check_references:conform_references"
+              hide: true
 
     export:
       label: "Export"
@@ -44,8 +50,12 @@ hip:
           label: "Export as hip"
           path: "silex_houdini.commands.export_hip.ExportHip"
           parameters:
-            directory: !command-output "setup:build_output_path:temp_directory"
-            file_name: !command-output "setup:build_output_path:file_name"
+            directory: 
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true
+            file_name: 
+              value: !command-output "setup:build_output_path:file_name"
+              hide: true
     move:
       label: "Move"
       index: 60
@@ -54,15 +64,23 @@ hip:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: !command-output "export:export_hip"
-            dst: !command-output "setup:build_output_path:directory"
+            src: 
+              value: !command-output "export:export_hip"
+              hide: true
+            dst: 
+              value: !command-output "setup:build_output_path:directory"
+              hide: true
         remove:
           label: "Remove temp directory"
           path: "silex_client.commands.remove.Remove"
           parameters:
-            file_path: !command-output "setup:build_output_path:temp_directory"
+            file_path: 
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true
         previous_mode:
           label: "Set update mode to its original value"
           path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
           parameters:
-            mode: !command-output "check_references:manual_mode:previous_mode"
+            mode: 
+              value: !command-output "check_references:manual_mode:previous_mode"
+              hide: true

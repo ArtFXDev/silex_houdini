@@ -20,7 +20,9 @@ hip:
           label: "Open scene to conform"
           path: "silex_houdini.commands.open.Open"
           parameters:
-            file_path: !command-output "input:input:file_paths"
+            file_path: 
+              value: !command-output "input:input:file_paths"
+              hide: true
             save: True
         get_references:
           label: "Get referenced files"
@@ -29,7 +31,9 @@ hip:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: !command-output "conform_references:get_references:file_paths"
+            values: 
+              value: !command-output "conform_references:get_references:file_paths"
+              hide: true
             actions:
               - "conform"
             categories:
@@ -66,12 +70,18 @@ hip:
             fast_conform: !command-output "conform:get_fast_conform_cache:value"
             use_current_context: false
             create_temp_dir: false
-            frame_set: !command-output "input:input:frame_set"
+            frame_set: 
+              value: !command-output "input:input:frame_set"
+              hide: true
             output_type:
               value: "hip"
               hide: true
-            files: !command-output "input:input:file_paths"
-            padding: !command-output "input:input:padding"
+            files: 
+              value: !command-output "input:input:file_paths"
+              hide: true
+            padding: 
+              value: !command-output "input:input:padding"
+              hide: true
           ask_user: true
         set_conform_cache:
           label: "Cache conform location"
@@ -94,24 +104,34 @@ hip:
           path: "silex_houdini.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
-            attributes: !command-output "conform_references:get_references:attributes"
-            values: !command-output "conform_references:conform_references"
+            attributes: 
+              value: !command-output "conform_references:get_references:attributes"
+              hide: true
+            values: 
+              value: !command-output "conform_references:conform_references"
+              hide: true
         save:
           label: "Save the houdini scene to the right location"
           path: "silex_houdini.commands.save.Save"
           parameters:
-            file_path: !command-output "conform_scene:build_output_path:full_path"
+            file_path: 
+              value: !command-output "conform_scene:build_output_path:full_path"
+              hide: true
         open:
           label: "Open back the original scene"
           path: "silex_houdini.commands.open.Open"
           parameters:
-            file_path: !command-output "conform_references:open:old_path"
+            file_path: 
+              value: !command-output "conform_references:open:old_path"
+              hide: true
             save: False
         previous_mode:
           label: "Set update mode to its original value"
           path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
           parameters:
-            mode: !command-output "conform_references:manual_mode:previous_mode"
+            mode: 
+              value: !command-output "conform_references:manual_mode:previous_mode"
+              hide: true
 
     output:
       index: 40
