@@ -1,9 +1,10 @@
 from __future__ import annotations
-import typing
-import pathlib
-from typing import Any, Dict
 
 import logging
+import pathlib
+import typing
+from typing import Any, Dict
+
 from silex_client.action.command_base import CommandBase
 from silex_houdini.utils.utils import Utils
 
@@ -12,6 +13,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
+
 import hou
 
 
@@ -50,15 +52,18 @@ class Save(CommandBase):
             hou.licenseCategoryType.Indie: ".hiplc",
             hou.licenseCategoryType.Commercial: ".hip",
         }
+
         file_path = pathlib.Path(
             os.path.splitext(file_path)[0]
             + extension_mapping.get(hou.licenseCategory(), ".hip")
         )
+
         file_name = file_path.as_posix()
 
         await Utils.wrapped_execute(
             action_query, hou.hipFile.setName, file_name=file_name
         )
+
         if not parameters["only_path"]:
             await Utils.wrapped_execute(
                 action_query, hou.hipFile.save, file_name=file_name
