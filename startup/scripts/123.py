@@ -1,9 +1,9 @@
 import hou
-
+from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
+
 from create_shelf import create_shelf
 from custom_save import custom_save
-from silex_client.action.action_query import ActionQuery
 
 # Start the maya services
 if hou.isUIAvailable():
