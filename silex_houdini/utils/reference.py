@@ -56,9 +56,14 @@ def filter_references(
             logger.info("Skipping %s %s because it's a duplicate", parameter, file_path)
             continue
 
-        # Filter the reference path
-        if any([path_filter(file_path) for path_filter in path_filters]):
-            logger.info("Skipping %s because of path_filter", file_path)
+        # Filter path
+        path_filter_continue = False
+        for path_filter in path_filters:
+            if path_filter(file_path):
+                logger.info("Skipping %s because of %s", file_path, path_filter)
+                path_filter_continue = True
+
+        if path_filter_continue:
             continue
 
         if is_param:
