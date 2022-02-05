@@ -10,6 +10,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
 from silex_houdini.utils import reference
+from silex_houdini.utils.constants import FILE_PATH_SEQUENCE_CAPTURE
 from silex_houdini.utils.utils import Utils
 
 # Forward references
@@ -105,19 +106,35 @@ class GetReferences(CommandBase):
 
         return filtered_references
 
-    def _find_sequence(self, file_path: pathlib.Path) -> Tuple[Optional[fileseq.FileSequence], List[pathlib.Path]]:
+    def _find_sequence(
+        self, file_path: pathlib.Path
+    ) -> Tuple[Optional[fileseq.FileSequence], List[pathlib.Path]]:
         sequence = None
         regex = fileseq.FileSequence.DISK_RE
 
         match = regex.match(str(file_path))
+
+        if not self._test_possible_sequence(file_path) or match is None:
+            return sequence, [file_path]
+
         _, basename, _, ext = match.groups()
         for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
             # Find the file sequence that correspond the to file we are looking for
             sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-            if basename == file_sequence.basename() and ext == file_sequence.extension():
+            if (
+                basename == file_sequence.basename()
+                and ext == file_sequence.extension()
+            ):
                 return sequence, sequence_list
 
         return sequence, [file_path]
+
+    def _test_possible_sequence(self, file_path: pathlib.Path) -> bool:
+        """
+        Test if the file path contains a sequence
+        """
+
+        return any([r.match(str(file_path)) for r in FILE_PATH_SEQUENCE_CAPTURE])
 
     @CommandBase.conform_command()
     async def __call__(

@@ -53,10 +53,17 @@ def filter_references(
 
         # Skip duplicates
         if (parameter, file_path) in filtered_references:
+            logger.info("Skipping %s %s because it's a duplicate", parameter, file_path)
             continue
 
-        # Filter the reference path
-        if any([path_filter(file_path) for path_filter in path_filters]):
+        # Filter path
+        path_filter_continue = False
+        for path_filter in path_filters:
+            if path_filter(file_path):
+                logger.info("Skipping %s because of %s", file_path, path_filter)
+                path_filter_continue = True
+
+        if path_filter_continue:
             continue
 
         if is_param:
@@ -64,7 +71,7 @@ def filter_references(
             node = parameter.node()
 
             # Check the node against filters
-            filter_hit= False
+            filter_hit = False
             for param_filter in param_filters:
                 if param_filter(node, parameter, file_path):
                     filter_hit = True
