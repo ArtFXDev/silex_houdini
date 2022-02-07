@@ -25,9 +25,6 @@ References = List[
     ]
 ]
 
-import importlib
-importlib.reload(reference)
-
 
 class GetReferences(CommandBase):
     """
