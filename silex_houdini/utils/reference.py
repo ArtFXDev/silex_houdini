@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import fileseq
+import re
 
 # from inspect import getmembers, isfunction
 from typing import Any, List, Tuple
@@ -10,6 +12,27 @@ import hou
 from silex_client.utils.files import is_valid_pipeline_path
 from silex_houdini.utils import parameter_filters, reference_path_filters
 from silex_houdini.utils.module import get_functions_in_module
+from silex_houdini.utils.constants import FILE_PATH_SEQUENCE_CAPTURE
+
+def expand_sequence(path_template: pathlib.Path, regexes: List[re.Pattern]) -> fileseq.FileSequence:
+    file_matches = []
+    for regex in regexes:
+        match = regex.match(str(path_template))
+        if match is None:
+            continue
+
+        template_format = re.escape(str(path_template).replace(match.group(1), r"__INDEX__"))
+        regex_format = re.compile(template_format.replace("__INDEX__", r"\d+"))
+        for child in path_template.parent.iterdir():
+            if regex_format.search(str(child)):
+                file_matches.append(child)
+
+        match_sequence = fileseq.findSequencesInList(file_matches)
+        if match_sequence:
+            return match_sequence[0]
+
+    return fileseq.findSequencesInList([path_template])[0]
+
 
 
 def filter_references(
@@ -46,6 +69,7 @@ def filter_references(
         if is_param:
             # Evaluate the Houdini expression to get the real path
             file_path = pathlib.Path(str(parameter.eval()))
+            file_path = pathlib.Path(str(expand_sequence(file_path, FILE_PATH_SEQUENCE_CAPTURE)[0]))
 
             # Get the real parameter
             while parameter.getReferencedParm() != parameter:

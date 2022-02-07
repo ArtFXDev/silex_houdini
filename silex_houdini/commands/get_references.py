@@ -9,6 +9,7 @@ import hou
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
+from silex_client.utils.files import find_sequence_from_path
 from silex_houdini.utils import reference
 from silex_houdini.utils.constants import FILE_PATH_SEQUENCE_CAPTURE
 from silex_houdini.utils.utils import Utils
@@ -23,6 +24,9 @@ References = List[
         Union[List[pathlib.Path], pathlib.Path],
     ]
 ]
+
+import importlib
+importlib.reload(reference)
 
 
 class GetReferences(CommandBase):
@@ -165,7 +169,8 @@ class GetReferences(CommandBase):
                 action_query, hou.expandString, str(file_path)
             )
             file_path = pathlib.Path(await expanded_path)
-            sequence, file_path_list = self._find_sequence(file_path)
+            sequence = find_sequence_from_path(file_path)
+            file_path_list = [pathlib.Path(file) for file in sequence]
             file_path = file_path_list[0]
 
             # Make sure the file path leads to a reachable file
