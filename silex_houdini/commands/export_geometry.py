@@ -63,13 +63,12 @@ class ExportGeometry(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        outdir = parameters.get("file_dir")
-        outfilename = parameters.get("file_name")
-        root_name = parameters.get("root_name")
-        used_timeline = parameters.get("timeline_as_framerange")
-        output_type = parameters.get("output_type")
-        start_frame = parameters.get("frame_range")[0]
-        end_frame = parameters.get("frame_range")[1]
+        outdir: pathlib.Path = parameters["file_dir"]
+        outfilename: pathlib.Path = parameters["file_name"]
+        used_timeline: bool = parameters["timeline_as_framerange"]
+        output_type: str = parameters["output_type"]
+        start_frame: int = parameters["frame_range"][0]
+        end_frame: int = parameters["frame_range"][1]
 
         def export_geo(selected_object, final_filename, start_frame, end_frame):
             merge_sop = hou.node(
@@ -127,14 +126,11 @@ class ExportGeometry(CommandBase):
 
         # compute final name
         extension = await gazu.files.get_output_type_by_name(output_type)
-        temp_outfilename = (
-            outdir / f"{outfilename}_{root_name}_$F4"
-            if root_name
-            else outdir / f"{outfilename}_$F4"
-        )
-        final_filename = str(
-            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
-        )
+        temp_outfilename = outdir / f"{outfilename}.$F4"
+        logger.warning(temp_outfilename)
+        final_filename = f"{temp_outfilename}.{extension['short_name']}"
+
+        logger.warning(final_filename)
         await Utils.wrapped_execute(
             action_query,
             export_geo,

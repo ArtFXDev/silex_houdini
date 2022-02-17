@@ -73,7 +73,14 @@ class ExportABC(CommandBase):
             # create a temporary ROP node
             abc_out = hou.node("/out").createNode("alembic")
             abc_out.parm("filename").set(final_filename)
-            abc_out.parm("objects").set(selected_object)
+
+            # the exported nodes can be either SOP or OBJ
+            if hou.node(selected_object[0]).type().category().name() == "Sop":
+                # in the case of SOP nodes, only one node can be exported
+                abc_out.parm("use_sop_path").set(True)
+                abc_out.parm("sop_path").set(selected_object[0])
+            else:
+                abc_out.parm("objects").set(" ".join(selected_object))
 
             # Set frame range
             abc_out.parm("trange").set(1)
@@ -90,23 +97,20 @@ class ExportABC(CommandBase):
         selected_object = [
             item.path()
             for item in hou.selectedNodes()
-            if item.type().category().name() == "Object"
+            if item.type().category().name() in ["Object", "Sop"]
         ]
 
         # Test/update current selection
         while len(selected_object) == 0:
             await self._prompt_info_parameter(
                 action_query,
-                "No nodes selected,\n please select Object nodes and continue.",
+                "No OBJ or SOP nodes selected,\n please select OBJ or SOP nodes and continue.",
             )
             selected_object = [
                 item.path()
                 for item in hou.selectedNodes()
-                if item.type().category().name() == "Object"
+                if item.type().category().name() in ["Object", "Sop"]
             ]
-
-        # get list of name ofcurrent selection
-        selected_object = " ".join(selected_object)
 
         # Test output path exist
         os.makedirs(outdir, exist_ok=True)
