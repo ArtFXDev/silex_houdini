@@ -127,9 +127,10 @@ class ExportGeometry(CommandBase):
         # compute final name
         extension = await gazu.files.get_output_type_by_name(output_type)
         temp_outfilename = outdir / f"{outfilename}.$F4"
-        final_filename = str(
-            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
-        )
+        logger.warning(temp_outfilename)
+        final_filename = f"{temp_outfilename}.{extension['short_name']}"
+
+        logger.warning(final_filename)
         await Utils.wrapped_execute(
             action_query,
             export_geo,
