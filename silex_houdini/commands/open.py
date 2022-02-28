@@ -46,6 +46,10 @@ class Open(CommandBase):
         # First get the current file name
         current_file = pathlib.Path(hou.hipFile.path())
 
+        # Don't open a file that is already open
+        if current_file == file_path:
+            return {"old_path": current_file, "new_path": parameters["file_path"]}
+
         # Test if the scene that we have to open exists
         if not file_path.exists():
             logger.error("Could not open %s: The file does not exists", file_path)
