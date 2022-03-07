@@ -8,6 +8,8 @@ import fileseq
 import re
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
+from silex_client.utils.files import format_sequence_string
+from silex_houdini.utils.constants import FILE_PATH_SEQUENCE_CAPTURE
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -85,23 +87,9 @@ class SetReferences(CommandBase):
             sequence = fileseq.findSequencesInList(values)[0]
             raw_value = attribute.rawValue()
 
-            REGEX_MAPPING = {r"\$[FTRN]": r"\W", r"\%.": r"\).", r"\<": r"\>."}
-            for start_regex, end_regex in REGEX_MAPPING.items():
-                index_start = list(re.finditer(start_regex, raw_value))
-                if not index_start:
-                    continue
-                index_start = index_start[-1].start()
-                index_end = list(re.finditer(end_regex, raw_value[index_start + 1 :]))
-                if not index_end:
-                    continue
-                index_end = index_end[0].end()
-
-                index_expression = raw_value[index_start : index_start + index_end]
-                dirname = pathlib.Path(str(sequence.dirname()))
-                basename = sequence.format(
-                    "{basename}" + str(index_expression) + "{extension}"
-                )
-                value = (dirname / basename).as_posix()
+            value = format_sequence_string(
+                sequence, raw_value, FILE_PATH_SEQUENCE_CAPTURE
+            )
 
         attribute.set(value)
         return value
