@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import hou
 from silex_client.action.action_query import ActionQuery
 from silex_client.resolve.config import Config
@@ -41,22 +43,37 @@ def create_shelf():
     import_statement = "from silex_client.action.action_query import ActionQuery"
     actions = {}
 
-    # For each actions in silex_houdini
-    for item in Config().actions:
-        action = ActionQuery(item["name"])
+    by_shelf = defaultdict(list)
+    for action in Config.get().actions:
+        resolved_action = Config.get().resolve_action(action["name"])
 
-        # Execute the action
-        actions[item["name"]] = {
-            "script": f"{import_statement}\nActionQuery('{item['name']}').execute()",
-            "icon": action.buffer.thumbnail,
-            "label": action.buffer.label,
-        }
+        if resolved_action is not None:
+            shelf_cat = resolved_action[action["name"]].get("shelf")
+            by_shelf[shelf_cat if shelf_cat is not None else "other"].append(
+                {
+                    "name": action["name"],
+                    "action": resolved_action,
+                    "script": f"{import_statement}\nActionQuery('{action['name']}').execute()",
+                }
+            )
 
-    # Create shelf tools
     shelf_tools = []
-    for action in actions:
-        tool = hou.shelves.newTool(name=action, **actions[action])
-        shelf_tools.append(tool)
+
+    # For each actions in silex_houdini
+    for shelf_category in by_shelf:
+        for action in by_shelf[shelf_category]:
+            action_name, action, script = action.values()
+            action = action[action_name]
+
+            tool = hou.shelves.newTool(
+                name=action_name,
+                **{
+                    "script": script,
+                    "icon": action.get("thumbnail", ""),
+                    "label": action.get("label", action_name),
+                },
+            )
+            shelf_tools.append(tool)
 
     # Set action in pipeline shelf
     shelf.setTools(shelf_tools)
