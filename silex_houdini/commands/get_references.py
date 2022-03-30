@@ -44,6 +44,7 @@ class GetReferences(CommandBase):
             "value": [],
             "tooltip": "List of file extensions to ignore",
         },
+        "skip_prompt": {'type': bool, 'value': False},
     }
 
     async def _prompt_new_path(
