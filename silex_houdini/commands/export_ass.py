@@ -79,9 +79,7 @@ class ExportAss(CommandBase):
 
         # get current selection
         selected_object = [
-            item
-            for item in hou.selectedNodes()
-            if item.type().name() == "arnold"
+            item for item in hou.selectedNodes() if item.type().name() == "arnold"
         ]
         while len(selected_object) != 1:
             await self._prompt_info_parameter(
@@ -89,9 +87,7 @@ class ExportAss(CommandBase):
                 "Invalid nodes selected,\n Please select Arnold ROP nodes and continue.",
             )
             selected_object = [
-                item
-                for item in hou.selectedNodes()
-                if item.type().name() == "arnold"
+                item for item in hou.selectedNodes() if item.type().name() == "arnold"
             ]
         selected_object = selected_object[0]
 
@@ -105,14 +101,10 @@ class ExportAss(CommandBase):
         ]  # [0] to avoid frames
         logger.info(selected_objects_types)
         not_allowed_rop = [
-            item
-            for item in selected_objects_types
-            if item.type().name() != "arnold"
+            item for item in selected_objects_types if item.type().name() != "arnold"
         ]
         allowed_rop = [
-            item
-            for item in selected_objects_types
-            if item.type().name() == "arnold"
+            item for item in selected_objects_types if item.type().name() == "arnold"
         ]
 
         # disable all not allowed rop nodes
