@@ -220,9 +220,6 @@ class GetReferences(CommandBase):
         ]
         
         # Send the message to the user
-<<<<<<< Updated upstream
-        if referenced_file_paths:
-=======
         if referenced_file_paths and not parameters['skip_prompt']:
             message = f"The scene\n{hou.hipFile.path()}\nis referencing non conformed file(s) :\n\n"
             for file_path in referenced_file_paths:
@@ -235,7 +232,6 @@ class GetReferences(CommandBase):
                 label="Info",
                 value=message,
             )
->>>>>>> Stashed changes
             await self.prompt_user(action_query, {"info": info_parameter})
 
         return {
