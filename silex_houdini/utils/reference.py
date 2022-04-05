@@ -48,9 +48,8 @@ def filter_references(
         if is_param:
             # Evaluate the Houdini expression to get the real path
             file_path = pathlib.Path(str(parameter.eval()))
-            if os.path.exists(file_path.parents[0]):
-                sequence = expand_template_to_sequence(file_path, FILE_PATH_SEQUENCE_CAPTURE)
-                file_path = pathlib.Path(str(sequence[0]))
+            sequence = expand_template_to_sequence(file_path, FILE_PATH_SEQUENCE_CAPTURE)
+            file_path = pathlib.Path(str(sequence[0]))
 
             # Get the real parameter
             while parameter.getReferencedParm() != parameter:
