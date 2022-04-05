@@ -7,6 +7,7 @@ import pathlib
 from typing import Any, List, Tuple
 
 import hou
+import os
 from silex_client.utils.files import is_valid_pipeline_path, expand_template_to_sequence
 from silex_houdini.utils import parameter_filters, reference_path_filters
 from silex_houdini.utils.module import get_functions_in_module
@@ -47,8 +48,9 @@ def filter_references(
         if is_param:
             # Evaluate the Houdini expression to get the real path
             file_path = pathlib.Path(str(parameter.eval()))
-            sequence = expand_template_to_sequence(file_path, FILE_PATH_SEQUENCE_CAPTURE)
-            file_path = pathlib.Path(str(sequence[0]))
+            if os.path.exists(file_path.parents[0]):
+                sequence = expand_template_to_sequence(file_path, FILE_PATH_SEQUENCE_CAPTURE)
+                file_path = pathlib.Path(str(sequence[0]))
 
             # Get the real parameter
             while parameter.getReferencedParm() != parameter:

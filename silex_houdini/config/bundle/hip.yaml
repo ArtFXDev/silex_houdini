@@ -1,0 +1,128 @@
+hip:
+  steps:
+    input:
+      index: 10
+      hide: True
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    get_bundle_location:
+      label: "Get houdini scene bundle location"
+      index: 15
+      commands:
+        build_bundle_path:
+          label: "Build path"
+          path: "silex_client.commands.build_bundle_path.BuildBundlePath"
+          parameters:
+            files_to_bundle:
+              value: !command-output "input:input:file_paths"
+            frame_set:
+              value: !command-output "input:input:frame_set"
+            padding:
+              value: !command-output "input:input:padding"
+            is_reference:
+              value: !command-output "input:input:is_reference"
+            output_type:
+              value: "hip"
+
+    bundle_references:
+      label: "bundle Houdini scene's references"
+      index: 20
+      commands:
+        manual_mode:
+          label: "Set update mode to manual"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode: "Manual"
+        open:
+          label: "Open scene to bundle"
+          path: "silex_houdini.commands.open.Open"
+          parameters:
+            file_path:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            save: True
+        get_references:
+          label: "Get referenced files"
+          path: "silex_houdini.commands.get_references.GetReferences"
+          parameters:
+            skip_prompt:
+              value: true
+            skip_conformed:
+              value: false
+        bundle_references:
+          label: "bundle found references"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values:
+              value: !command-output "bundle_references:get_references:file_paths"
+              hide: true
+            actions:
+              - "reference_bundle"
+            categories:
+              - "bundle"
+            parameter: "setup:get_bundle_output:file_paths"
+            label_key: "file_paths"
+            output: "setup:append_bundle_actions"
+
+    bundle_hip:
+      label: "Bundle Houdini scene"
+      index: 30
+      commands:
+        repath_attributes:
+          label: "Repath attributes"
+          path: "silex_houdini.commands.set_references.SetReferences"
+          tooltip: "Set the new path on the attributes"
+          parameters:
+            attributes:
+              value: !command-output "bundle_references:get_references:attributes"
+              hide: true
+            values:
+              value: !command-output "bundle_references:bundle_references"
+              hide: true
+        expand_paths:
+          label: "Expand environement variables"
+          path: "silex_client.commands.expand_paths.ExpandPaths"
+          parameters:
+            paths_to_expand:
+              value: !command-output "get_bundle_location:build_bundle_path:full_path"
+        save:
+          label: "Save the Houdini scene to the right location"
+          path: "silex_houdini.commands.save.Save"
+          parameters:
+            file_path:
+              value: !command-output "bundle_hip:expand_paths:expanded_paths"
+              hide: true
+        set_env:
+          label: "Replace path by environement variables"
+          path: "silex_client.commands.set_env.SetEnv"
+          parameters:
+            paths:
+              value: !command-output "bundle_hip:save:new_path"
+            envs:
+              value: !command-output "bundle_hip:expand_paths:envs"
+        open:
+          label: "Open back the original scene"
+          path: "silex_houdini.commands.open.Open"
+          parameters:
+            file_path:
+              value: !command-output "bundle_references:open:old_path"
+              hide: true
+            save: False
+        previous_mode:
+          label: "Set update mode to its original value"
+          path: "silex_houdini.commands.set_update_mode.SetUpdateMode"
+          parameters:
+            mode:
+              value: !command-output "bundle_references:manual_mode:previous_mode"
+              hide: true
+
+    output:
+      index: 45
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "bundle_hip:set_env:expanded_paths"
