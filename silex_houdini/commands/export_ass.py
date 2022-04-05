@@ -64,7 +64,7 @@ class ExportAss(CommandBase):
             )
             to_return.append(outdir)
             node.parm("ar_ass_file").set(node_filename)
-            logger.infoe(f"Done export ass, output paths : {node_filename}")
+            logger.info(f"Done export ass, output paths : {node_filename}")
 
         def exec(selected_object):
             selected_object.parm("execute").pressButton()
