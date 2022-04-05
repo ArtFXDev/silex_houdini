@@ -57,13 +57,10 @@ class ExportAss(CommandBase):
         logger: logging.Logger,
     ):
         def export_assnode(selected_object, node, out_file_name, to_return, logger):
-            node_filename = f"{out_file_name}_{node.name()}.$F4.placeholder"
-            # .placeholder because with_suffix replace .somethings in filename
-            # but we want to keep .0001 for example
+            node_filename = f"{out_file_name}_{node.name()}.$F4.{extension['short_name']}"
+
             node_filename = pathlib.Path(os.path.join(outdir, node_filename))
-            node_filename = str(
-                node_filename.with_suffix(f".{extension['short_name']}")
-            )
+            node_filename = str(node_filename)
             to_return.append(outdir)
             node.parm("ar_ass_file").set(node_filename)
             logger.info(f"Done export ass, output paths : {node_filename}")
