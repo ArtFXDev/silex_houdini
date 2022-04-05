@@ -30,7 +30,7 @@ class ExportAss(CommandBase):
         self, action_query: ActionQuery, message: str, level: str = "warning"
     ) -> pathlib.Path:
         """
-        Helper to prompt the user a labelb
+        Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
@@ -57,7 +57,9 @@ class ExportAss(CommandBase):
         logger: logging.Logger,
     ):
         def export_assnode(selected_object, node, out_file_name, to_return, logger):
-            node_filename = f"{out_file_name}_{node.name()}_$F4"
+            node_filename = f"{out_file_name}_{node.name()}.$F4.placeholder"
+            # .placeholder because with_suffix replace .somethings in filename
+            # but we want to keep .0001 for example
             node_filename = pathlib.Path(os.path.join(outdir, node_filename))
             node_filename = str(
                 node_filename.with_suffix(f".{extension['short_name']}")
