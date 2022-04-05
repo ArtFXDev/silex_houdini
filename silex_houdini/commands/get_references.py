@@ -212,7 +212,6 @@ class GetReferences(CommandBase):
         # Remove all the duplicates
         references_found = self._merge_duplicates(references_found)
 
-        # Display a message to the user to inform about all the references to conform
         referenced_file_paths = [
             fileseq.findSequencesInList(reference[1])
             if isinstance(reference[1], list)
