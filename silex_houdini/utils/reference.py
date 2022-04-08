@@ -25,20 +25,20 @@ def filter_references(
     filtered_references = []
 
     # Skip the references that are already conformed
-    def filter_already_conformed(node, parameter, file_path):
+    def filter_already_conformed(file_path):
         return skip_conformed and is_valid_pipeline_path(file_path)
 
     # Skip the custom extensions provided
-    def filter_custom_extensions(node, parameter, file_path):
+    def filter_custom_extensions(file_path):
         return "".join(pathlib.Path(file_path).suffixes) in skipped_extensions
 
     # Get all the filter functions dynamically from modules
-    path_filters = get_functions_in_module(reference_path_filters)
-
-    param_filters = get_functions_in_module(parameter_filters) + [
+    path_filters = get_functions_in_module(reference_path_filters) + [
         filter_already_conformed,
         filter_custom_extensions,
     ]
+
+    param_filters = get_functions_in_module(parameter_filters)
 
     for parameter, file_path in references:
         file_path = pathlib.Path(str(file_path))
