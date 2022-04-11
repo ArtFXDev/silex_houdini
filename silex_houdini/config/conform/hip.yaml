@@ -114,7 +114,7 @@ hip:
           label: "Save the houdini scene to the right location"
           path: "silex_houdini.commands.save.Save"
           parameters:
-            file_path:
+            file_paths:
               value: !command-output "conform_scene:build_output_path:full_path"
               hide: true
         open:

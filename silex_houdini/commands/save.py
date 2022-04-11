@@ -25,7 +25,7 @@ class Save(CommandBase):
     """
 
     parameters = {
-        "file_path": {"label": "filename", "type": ListParameter, "value": None, "hide": False},
+        "file_paths": {"label": "filename", "type": ListParameter, "value": None, "hide": False},
         "only_path": {
             "label": "Only set the path",
             "type": bool,
@@ -41,7 +41,7 @@ class Save(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        file_paths: List[pathlib.Path] = list(map(pathlib.Path, parameters["file_path"]))
+        file_paths: List[pathlib.Path] = list(map(pathlib.Path, parameters["file_paths"]))
         
         file_names = []
 

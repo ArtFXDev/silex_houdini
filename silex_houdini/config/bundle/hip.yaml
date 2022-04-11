@@ -91,7 +91,7 @@ hip:
           label: "Save the Houdini scene to the right location"
           path: "silex_houdini.commands.save.Save"
           parameters:
-            file_path:
+            file_paths:
               value: !command-output "bundle_hip:expand_paths:expanded_paths"
               hide: true
         set_env:
