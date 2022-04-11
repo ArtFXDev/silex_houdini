@@ -7,6 +7,7 @@ import pathlib
 from typing import Any, List, Tuple
 
 import hou
+import os
 from silex_client.utils.files import is_valid_pipeline_path, expand_template_to_sequence
 from silex_houdini.utils import parameter_filters, reference_path_filters
 from silex_houdini.utils.module import get_functions_in_module

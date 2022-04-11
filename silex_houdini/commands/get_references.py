@@ -44,6 +44,7 @@ class GetReferences(CommandBase):
             "value": [],
             "tooltip": "List of file extensions to ignore",
         },
+        "skip_prompt": {'type': bool, 'value': False},
     }
 
     async def _prompt_new_path(
@@ -149,6 +150,7 @@ class GetReferences(CommandBase):
 
         # Get all the references of the scene
         scene_references = await Utils.wrapped_execute(action_query, hou.fileReferences)
+
         filtered_scene_references = await Utils.wrapped_execute(
             action_query,
             reference.filter_references,
@@ -161,10 +163,12 @@ class GetReferences(CommandBase):
         # Loop over all the filtered references
         skip_all = False
         for parameter, file_path in await filtered_scene_references:
+
             # Get the real path
             expanded_path = await Utils.wrapped_execute(
                 action_query, hou.expandString, str(file_path)
             )
+
             file_path = pathlib.Path(await expanded_path)
             sequence = find_sequence_from_path(file_path)
             file_path_list = [pathlib.Path(file) for file in sequence]
@@ -198,7 +202,6 @@ class GetReferences(CommandBase):
                     action_query, hou.hda.definitionsInFile, file_path.as_posix()
                 )
                 references_found.append((list(await definitions), file_path_list))
-
             # Append to the references found
             references_found.append(([parameter], file_path_list))
             if sequence is None:
@@ -209,26 +212,26 @@ class GetReferences(CommandBase):
         # Remove all the duplicates
         references_found = self._merge_duplicates(references_found)
 
-        # Display a message to the user to inform about all the references to conform
         referenced_file_paths = [
             fileseq.findSequencesInList(reference[1])
             if isinstance(reference[1], list)
             else [reference[1]]
             for reference in references_found
         ]
-        message = f"The scene\n{hou.hipFile.path()}\nis referencing non conformed file(s) :\n\n"
-        for file_path in referenced_file_paths:
-            message += f"- {' '.join([str(f) for f in file_path])}\n"
-
-        message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta("info"),
-            name="info",
-            label="Info",
-            value=message,
-        )
+        
         # Send the message to the user
-        if referenced_file_paths:
+        if referenced_file_paths and not parameters['skip_prompt']:
+            message = f"The scene\n{hou.hipFile.path()}\nis referencing non conformed file(s) :\n\n"
+            for file_path in referenced_file_paths:
+                message += f"- {' '.join([str(f) for f in file_path])}\n"
+
+            message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("info"),
+                name="info",
+                label="Info",
+                value=message,
+            )
             await self.prompt_user(action_query, {"info": info_parameter})
 
         return {
@@ -241,7 +244,7 @@ class GetReferences(CommandBase):
         parameters: Dict[str, Any],
         action_query: ActionQuery,
         logger: logging.Logger,
-    ):
+    ):  
         new_path_parameter = self.command_buffer.parameters.get("new_path")
         skip_parameter = self.command_buffer.parameters.get("skip")
         skip_all_parameter = self.command_buffer.parameters.get("skip_all")
