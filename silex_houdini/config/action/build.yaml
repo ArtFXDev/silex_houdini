@@ -11,4 +11,4 @@ build:
         save_scene:
           path: "silex_houdini.commands.save.Save"
           parameters:
-            file_path: !command-output "save:build_work_path"
+            file_paths: !command-output "save:build_work_path"
