@@ -57,7 +57,6 @@ ass:
         export_ass:
           label: "Export in Ass"
           path: "silex_houdini.commands.export_ass.ExportAss"
-          ask_user: true
           parameters:
             file_dir: 
               value: !command-output "setup:build_output_path:temp_directory"
