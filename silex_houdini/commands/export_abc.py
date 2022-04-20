@@ -35,6 +35,11 @@ class ExportABC(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [0, 0],
         },
+        "multiple_files": {
+            "label": "Export as file sequence",
+            "type": bool,
+            "value": False,
+        },
     }
 
     async def _prompt_info_parameter(
@@ -65,6 +70,7 @@ class ExportABC(CommandBase):
     ):
         outdir = parameters["file_dir"]
         outfilename = parameters["file_name"]
+        multiple_files: bool = parameters["multiple_files"]
         used_timeline = parameters["timeline_as_framerange"]
         start_frame = parameters["frame_range"][0]
         end_frame = parameters["frame_range"][1]
@@ -119,8 +125,11 @@ class ExportABC(CommandBase):
         extension = await gazu.files.get_output_type_by_name("abc")
         temp_outfilename = outdir / f"{outfilename}"
 
+        if multiple_files:
+            temp_outfilename = temp_outfilename.parent / (temp_outfilename.name + ".$F4")
+
         final_filename = str(
-            pathlib.Path(temp_outfilename).with_suffix(f".{extension['short_name']}")
+            temp_outfilename.parent / (temp_outfilename.name + f".{extension['short_name']}")
         )
 
         # Set frame range
@@ -140,6 +149,8 @@ class ExportABC(CommandBase):
 
         # export
         logger.info(f"Done export abc, output paths : {final_filename}")
+        if multiple_files:
+            return outdir
         return final_filename
 
     async def setup(
